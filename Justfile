@@ -8,6 +8,7 @@ default:
 
 # 🚀 Khởi chạy toàn bộ hệ thống bằng Docker Compose (Build & Run ngầm)
 up:
+    @test -f .env || cp .env.example .env 2>/dev/null || touch .env
     docker compose up -d --build
     @echo "✨ Glow Diary is up at http://localhost:5173"
 
@@ -28,6 +29,7 @@ logs:
 update:
     @echo "📥 Pulling latest changes from git..."
     git pull origin main
+    @test -f .env || cp .env.example .env 2>/dev/null || touch .env
     @echo "🔨 Building updated container..."
     docker compose build
     @echo "🚀 Restarting container with zero data loss..."

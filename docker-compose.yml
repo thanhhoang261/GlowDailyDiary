@@ -5,15 +5,8 @@ services:
       dockerfile: Dockerfile
     container_name: diary-app
     restart: unless-stopped
-    env_file:
-      - path: packages/backend/.env
-        required: false
-      - path: .env
-        required: false
     ports:
       - "${PORT:-5173}:5173"
-    env_file:
-      - .env
     environment:
       - NODE_ENV=production
       - PORT=5173
