@@ -352,10 +352,6 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
               aiReview={aiReview}
               activeView={editorView}
               onToggleView={setEditorView}
-              onApplyRevised={(newTitle, newContent) => {
-                if (newTitle) setTitle(newTitle);
-                if (newContent) setContent(newContent);
-              }}
               onReviewSaved={(newReview) => setAiReview(newReview)}
             />
 

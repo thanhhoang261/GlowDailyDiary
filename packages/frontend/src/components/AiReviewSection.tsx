@@ -9,8 +9,11 @@ import {
   Eye,
   EyeOff,
   ChevronDown,
+  ChevronUp,
   CheckCircle2,
   BookCheck,
+  ShieldCheck,
+  FileText,
 } from 'lucide-react';
 import { AiReviewResult } from '@diary/shared';
 import { api } from '../services/api';
@@ -20,7 +23,6 @@ interface AiReviewSectionProps {
   title: string;
   content: string;
   aiReview: AiReviewResult | null;
-  onApplyRevised: (newTitle: string, newContent: string) => void;
   onReviewSaved: (review: AiReviewResult) => void;
   activeView: 'original' | 'revised';
   onToggleView: (view: 'original' | 'revised') => void;
@@ -31,7 +33,6 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
   title,
   content,
   aiReview,
-  onApplyRevised,
   onReviewSaved,
   activeView,
   onToggleView,
@@ -39,7 +40,7 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [applied, setApplied] = useState(false);
+  const [showOriginalComparison, setShowOriginalComparison] = useState(false);
 
   // API Key Modal State
   const [showKeyModal, setShowKeyModal] = useState(false);
@@ -99,18 +100,10 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
 
   const handleCopyRevised = () => {
     if (!aiReview) return;
-    const textToCopy = `${aiReview.correctedTitle}\n\n${aiReview.correctedContent}`;
+    const textToCopy = `${aiReview.correctedTitle || title}\n\n${aiReview.correctedContent}`;
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
-  };
-
-  const handleApply = () => {
-    if (!aiReview) return;
-    onApplyRevised(aiReview.correctedTitle, aiReview.correctedContent);
-    setApplied(true);
-    onToggleView('original');
-    setTimeout(() => setApplied(false), 3000);
   };
 
   const changeTypeBadge = (type: string) => {
@@ -128,11 +121,15 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
     }
   };
 
+  const revisedWordCount = aiReview?.correctedContent
+    ? aiReview.correctedContent.trim().split(/\s+/).filter(Boolean).length
+    : 0;
+
   return (
     <div className="w-full">
       {/* Subtle Segmented Switch Bar */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
-        {/* Toggle Switch: Original vs Revised */}
+        {/* Toggle Switch: Original vs Full Revised */}
         <div className="inline-flex p-1 bg-pink-50/70 rounded-2xl border border-pink-100/90 shadow-2xs">
           <button
             type="button"
@@ -143,7 +140,7 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
                 : 'text-glow-muted hover:text-glow-cocoa'
             }`}
           >
-            <span>✍️ Original</span>
+            <span>✍️ Bản gốc</span>
           </button>
 
           <button
@@ -164,7 +161,7 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-500" />
             <span>
-              {aiReview ? `Revised & Notes (${aiReview.changes.length})` : 'AI Review'}
+              {aiReview ? `✨ Bản sửa full AI (${aiReview.changes.length})` : '✨ AI Review'}
             </span>
           </button>
         </div>
@@ -176,18 +173,18 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
               type="button"
               onClick={() => handleStartReview()}
               disabled={isLoading}
-              title="Re-check entry with AI"
+              title="Yêu cầu AI soát lỗi lại lần nữa"
               className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-glow-muted hover:text-rose-500 bg-pink-50/50 hover:bg-white border border-pink-100/80 transition bouncy-button flex items-center gap-1"
             >
               <RotateCcw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Re-check</span>
+              <span className="hidden sm:inline">Soát lại</span>
             </button>
           )}
 
           <button
             type="button"
             onClick={() => setShowKeyModal(true)}
-            title="Configure OpenAI API Key"
+            title="Cài đặt OpenAI API Key"
             className="p-1.5 rounded-xl text-xs font-bold text-glow-muted hover:text-rose-500 bg-pink-50/50 hover:bg-white border border-pink-100/80 transition bouncy-button"
           >
             <Key className="w-3.5 h-3.5" />
@@ -204,7 +201,7 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
             className="w-8 h-8 object-contain"
           />
           <span className="text-xs font-bold text-glow-cocoa">
-            Checking spelling, grammar & natural phrasing with OpenAI...
+            Đang tạo bản sửa hoàn chỉnh và giải thích ngữ pháp với OpenAI...
           </span>
         </div>
       )}
@@ -228,37 +225,76 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
       {activeView === 'revised' && aiReview && (
         <div className="flex flex-col gap-4 mt-2">
           {/* Header Action Bar for Revised Mode */}
-          <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-pink-50/60 rounded-2xl border border-pink-100">
-            <div className="flex items-center gap-1.5 text-xs font-extrabold text-glow-cocoa">
-              <BookCheck className="w-4 h-4 text-emerald-600" />
-              <span>AI Revised Entry & Explanations</span>
+          <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-gradient-to-r from-pink-50/70 via-rose-50/50 to-amber-50/50 rounded-2xl border border-pink-100">
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-1.5 text-xs font-black text-glow-cocoa">
+                <BookCheck className="w-4 h-4 text-emerald-600" />
+                <span>Bản sửa hoàn chỉnh bằng AI (Full Revised Entry)</span>
+              </div>
+              <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Bản gốc của bạn được giữ nguyên 100% – không bị thay đổi</span>
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={handleCopyRevised}
-                className="px-3 py-1.5 rounded-xl bg-white hover:bg-pink-50 text-xs font-bold text-glow-cocoa border border-pink-200/80 transition bouncy-button flex items-center gap-1"
+                className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-pink-50 text-xs font-bold text-glow-cocoa border border-pink-200/80 transition bouncy-button flex items-center gap-1.5 shadow-2xs"
               >
-                {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3 text-glow-muted" />}
-                <span>{copied ? 'Copied!' : 'Copy'}</span>
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-glow-muted" />}
+                <span>{copied ? 'Đã copy!' : 'Copy bản sửa full'}</span>
               </button>
 
               <button
                 type="button"
-                onClick={handleApply}
-                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-xs font-extrabold shadow-cute transition bouncy-button flex items-center gap-1"
+                onClick={() => setShowOriginalComparison(!showOriginalComparison)}
+                className="px-3 py-1.5 rounded-xl bg-pink-100/50 hover:bg-pink-100 text-xs font-bold text-glow-cocoa border border-pink-200/60 transition bouncy-button flex items-center gap-1"
+                title="Xem lại bản gốc bạn đã viết"
               >
-                <Check className="w-3.5 h-3.5" />
-                <span>Apply to Original</span>
+                <FileText className="w-3.5 h-3.5 text-rose-500" />
+                <span>{showOriginalComparison ? 'Ẩn so sánh' : 'Xem bản gốc'}</span>
+                {showOriginalComparison ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               </button>
             </div>
           </div>
 
-          {/* Revised Title & Content Card */}
-          <div className="p-5 rounded-2xl bg-pink-50/25 border border-pink-100 flex flex-col gap-3">
+          {/* Quick Comparison with Original (Collapsible) */}
+          {showOriginalComparison && (
+            <div className="p-4 rounded-2xl bg-amber-50/40 border border-amber-200/70 flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs font-extrabold text-amber-900">
+                <span className="flex items-center gap-1.5">
+                  <span>✍️ Bản gốc bạn đã viết (Original Text):</span>
+                </span>
+                <span className="text-[11px] text-amber-700 font-semibold">
+                  (Không bị thay đổi)
+                </span>
+              </div>
+              {title && (
+                <div className="text-sm font-bold text-stone-700">
+                  {title}
+                </div>
+              )}
+              <div className="text-xs leading-relaxed text-stone-600 whitespace-pre-wrap bg-white/70 p-3 rounded-xl border border-amber-100">
+                {content || '(Trống)'}
+              </div>
+            </div>
+          )}
+
+          {/* Full Revised Title & Content Card */}
+          <div className="p-5 sm:p-6 rounded-3xl bg-pink-50/30 border border-pink-100/90 shadow-2xs flex flex-col gap-3.5">
+            <div className="flex items-center justify-between border-b border-pink-100 pb-2">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-rose-500 flex items-center gap-1">
+                <span>📖 Bản văn hoàn chỉnh sau khi trau chuốt</span>
+              </span>
+              <span className="text-xs font-bold text-glow-muted">
+                {revisedWordCount} words
+              </span>
+            </div>
+
             {aiReview.correctedTitle && (
-              <h3 className="text-xl font-black text-glow-cocoa">
+              <h3 className="text-xl sm:text-2xl font-black text-glow-cocoa tracking-tight">
                 {aiReview.correctedTitle}
               </h3>
             )}
@@ -285,14 +321,14 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
           <div className="flex flex-col gap-2.5 pt-1">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-extrabold uppercase tracking-wider text-glow-muted">
-                Corrections & Explanations ({aiReview.changes.length})
+                Chi tiết các lỗi & Giải thích ({aiReview.changes.length})
               </h4>
             </div>
 
             {aiReview.changes.length === 0 ? (
               <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800 flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>Splendid! No spelling or grammar errors detected in this entry. Keep it up! 🌸</span>
+                <span>Tuyệt vời! Không phát hiện lỗi chính tả hay ngữ pháp nào trong bài viết này. 🌸</span>
               </div>
             ) : (
               <div className="flex flex-col gap-2.5">
@@ -335,7 +371,7 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
                   <Key className="w-4 h-4" />
                 </div>
                 <h3 className="font-extrabold text-glow-cocoa text-base">
-                  OpenAI API Key
+                  Cài đặt OpenAI API Key
                 </h3>
               </div>
               <button
@@ -348,7 +384,7 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
             </div>
 
             <p className="text-xs text-glow-muted leading-relaxed">
-              To check grammar and spelling, please provide your OpenAI API key (starts with <code className="bg-pink-50 px-1 py-0.5 rounded text-rose-600 font-mono">sk-...</code>). Your key is used directly to review your English entries.
+              Nhập API Key OpenAI của bạn (bắt đầu bằng <code className="bg-pink-50 px-1 py-0.5 rounded text-rose-600 font-mono">sk-...</code>). Hệ thống sẽ dùng key này để soát lỗi ngữ pháp và tạo bản sửa hoàn chỉnh cho bạn.
             </p>
 
             <div className="flex flex-col gap-1.5">
@@ -380,7 +416,7 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
                 onChange={(e) => setSaveKeyToProfile(e.target.checked)}
                 className="rounded accent-rose-500 w-4 h-4"
               />
-              <span>Remember this key for my account</span>
+              <span>Lưu key này cho tài khoản của tôi</span>
             </label>
 
             <div className="flex items-center justify-end gap-2 pt-2">
@@ -389,7 +425,7 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
                 onClick={() => setShowKeyModal(false)}
                 className="px-4 py-2 rounded-xl text-xs font-bold text-glow-muted hover:bg-pink-50 transition"
               >
-                Cancel
+                Hủy
               </button>
               <button
                 type="button"
@@ -397,7 +433,7 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
                 disabled={isLoading || !apiKeyInput.trim()}
                 className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold text-xs shadow-cute transition bouncy-button disabled:opacity-50"
               >
-                {isLoading ? 'Checking...' : 'Save & Check English ✨'}
+                {isLoading ? 'Đang kiểm tra...' : 'Lưu & Soát lỗi AI ✨'}
               </button>
             </div>
           </div>

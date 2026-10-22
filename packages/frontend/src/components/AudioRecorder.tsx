@@ -25,13 +25,14 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   // Playback state
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackTime, setPlaybackTime] = useState(0);
-  const [totalDuration, setTotalDuration] = useState<number>(existingDuration || 0);
+  const [totalDuration, setTotalDuration] = useState<number>(existingDuration && Number.isFinite(existingDuration) ? existingDuration : 0);
 
   // Media references
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerIntervalRef = useRef<number | null>(null);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+  const startTimeRef = useRef<number>(0);
 
   // Visualizer audio context
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -42,13 +43,45 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   useEffect(() => {
     if (existingAudioUrl) {
       setPreviewUrl(existingAudioUrl);
-      if (existingDuration) setTotalDuration(existingDuration);
+      if (existingDuration && Number.isFinite(existingDuration) && existingDuration > 0) {
+        setTotalDuration(existingDuration);
+      }
     } else {
       setPreviewUrl(null);
       setAudioBlob(null);
       setTotalDuration(0);
     }
   }, [existingAudioUrl, existingDuration]);
+
+  // Decode audio data to extract exact duration if totalDuration is not yet set or invalid
+  useEffect(() => {
+    if (!previewUrl) return;
+    if (Number.isFinite(totalDuration) && totalDuration > 0) return;
+
+    let isCancelled = false;
+    const detectDuration = async () => {
+      try {
+        const res = await fetch(previewUrl);
+        const arrayBuffer = await res.arrayBuffer();
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const decoded = await ctx.decodeAudioData(arrayBuffer);
+        if (!isCancelled && decoded && Number.isFinite(decoded.duration) && decoded.duration > 0) {
+          const exact = Math.round(decoded.duration);
+          setTotalDuration(exact);
+        }
+        ctx.close().catch(() => {});
+      } catch {
+        // Ignore silent fallback
+      }
+    };
+
+    detectDuration();
+    return () => {
+      isCancelled = true;
+    };
+  }, [previewUrl, totalDuration]);
 
   // Clean up on unmount
   useEffect(() => {
@@ -61,6 +94,9 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   }, []);
 
   const formatTime = (secs: number) => {
+    if (!Number.isFinite(secs) || isNaN(secs) || secs < 0) {
+      return '00:00';
+    }
     const m = Math.floor(secs / 60);
     const s = Math.floor(secs % 60);
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
@@ -127,6 +163,9 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
 
+      startTimeRef.current = Date.now();
+      setRecordDuration(0);
+
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
@@ -134,12 +173,16 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       };
 
       mediaRecorder.onstop = () => {
+        const elapsedSecs = Math.max(
+          1,
+          Math.round((Date.now() - startTimeRef.current) / 1000)
+        );
         const blob = new Blob(audioChunksRef.current, { type: mimeType });
         setAudioBlob(blob);
         const url = URL.createObjectURL(blob);
         setPreviewUrl(url);
-        setTotalDuration(recordDuration);
-        onAudioReady(blob, recordDuration);
+        setTotalDuration(elapsedSecs);
+        onAudioReady(blob, elapsedSecs);
 
         // Stop all tracks
         stream.getTracks().forEach((track) => track.stop());
@@ -148,15 +191,15 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       mediaRecorder.start(250); // slices every 250ms
       setIsRecording(true);
       setIsPaused(false);
-      setRecordDuration(0);
 
       // Visualizer
       startVisualizer(stream);
 
       // Timer
       timerIntervalRef.current = window.setInterval(() => {
-        setRecordDuration((prev) => prev + 1);
-      }, 1000);
+        const elapsed = Math.max(0, Math.round((Date.now() - startTimeRef.current) / 1000));
+        setRecordDuration(elapsed);
+      }, 500);
     } catch (err) {
       console.error('Error starting audio recording:', err);
       alert('Microphone access was denied or is not supported by your browser.');
@@ -196,9 +239,14 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
 
   const handleAudioTimeUpdate = () => {
     if (audioPlayerRef.current) {
-      setPlaybackTime(audioPlayerRef.current.currentTime);
-      if (audioPlayerRef.current.duration && !isNaN(audioPlayerRef.current.duration)) {
-        setTotalDuration(Math.round(audioPlayerRef.current.duration));
+      const cur = audioPlayerRef.current.currentTime || 0;
+      setPlaybackTime(cur);
+
+      const dur = audioPlayerRef.current.duration;
+      if (Number.isFinite(dur) && dur > 0) {
+        setTotalDuration(Math.round(dur));
+      } else if (cur > totalDuration) {
+        setTotalDuration(Math.ceil(cur));
       }
     }
   };
@@ -206,10 +254,14 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const handleAudioEnded = () => {
     setIsPlaying(false);
     setPlaybackTime(0);
+    if (playbackTime > 0 && (!Number.isFinite(totalDuration) || totalDuration <= 0)) {
+      setTotalDuration(Math.round(playbackTime));
+    }
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const time = parseFloat(e.target.value);
+    if (!Number.isFinite(time)) return;
     setPlaybackTime(time);
     if (audioPlayerRef.current) {
       audioPlayerRef.current.currentTime = time;
@@ -326,7 +378,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
               <input
                 type="range"
                 min="0"
-                max={totalDuration || 100}
+                max={Number.isFinite(totalDuration) && totalDuration > 0 ? totalDuration : Math.max(60, Math.ceil(playbackTime))}
                 step="0.1"
                 value={playbackTime}
                 onChange={handleSeek}
