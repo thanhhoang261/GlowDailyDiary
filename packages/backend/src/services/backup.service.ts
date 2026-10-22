@@ -58,6 +58,11 @@ export async function handleGoogleOAuthCallback(
 ): Promise<{ email: string }> {
   const oauth2Client = getOAuth2Client();
   const { tokens } = await oauth2Client.getToken(code);
+
+  if (tokens.scope && !tokens.scope.includes('drive')) {
+    throw new Error('Bạn chưa tích chọn ô quyền truy cập Google Drive trên màn hình Google. Vui lòng bấm Kết nối lại và tích chọn quyền Drive.');
+  }
+
   oauth2Client.setCredentials(tokens);
 
   // Retrieve user's email address
