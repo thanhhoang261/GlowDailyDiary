@@ -134,20 +134,31 @@ export const api = {
       method: 'DELETE',
     }),
 
-  // Backup & Cloud Sync
+  // Backup & Personal Cloud Sync
   getBackupStatus: () =>
-    request<{
-      isGoogleDriveConfigured: boolean;
-      isCronEnabled: boolean;
-      cronSchedule: string;
-      lastBackup: any;
-      recentBackups: { filename: string; size: number; createdAt: string }[];
-    }>('/api/backup/status', { method: 'GET' }),
+    request<import('@diary/shared').UserBackupStatus>('/api/backup/status', { method: 'GET' }),
 
-  triggerBackupNow: () =>
-    request<{ success: boolean; message: string; backup: any }>('/api/backup/now', {
+  getGoogleAuthUrl: () =>
+    request<{ url: string }>('/api/backup/google/auth-url', { method: 'GET' }),
+
+  disconnectGoogleDrive: () =>
+    request<{ success: boolean; message: string }>('/api/backup/google/disconnect', {
       method: 'POST',
     }),
+
+  updateBackupSettings: (data: { autoBackupEnabled: boolean }) =>
+    request<{ success: boolean; autoBackupEnabled: boolean }>('/api/backup/settings', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  triggerBackupNow: () =>
+    request<{ success: boolean; message: string; filename: string; size: number; googleDriveUploaded: boolean; webViewLink?: string }>(
+      '/api/backup/now',
+      {
+        method: 'POST',
+      }
+    ),
 
   downloadBackup: async () => {
     const token = tokenStorage.get();
@@ -159,7 +170,7 @@ export const api = {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `glow-diary-backup-${new Date().toISOString().slice(0, 10)}.zip`;
+    a.download = `glow-diary-personal-backup-${new Date().toISOString().slice(0, 10)}.zip`;
     document.body.appendChild(a);
     a.click();
     a.remove();

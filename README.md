@@ -80,25 +80,31 @@ You can either register your own account or click **"Fill Demo Account"** on the
 
 ---
 
-## ☁️ Google Drive Backup Setup Guide
+## ☁️ Personalized Google Drive Backup (Per-User OAuth)
 
-The application automatically creates local backup archives even without Google Cloud credentials. To stream backups straight into your Google Drive:
+Each user can connect their own Google Drive account so their diary entries and voice notes are stored safely in their private cloud folder (`Daily Glow Diary Backups 🌸`), completely isolated from other users!
 
-1. **Create Google Cloud Project & Enable API:**
-   - Go to [Google Cloud Console](https://console.cloud.google.com/) and create a project.
-   - Go to **APIs & Services** &rarr; **Library** &rarr; Search and enable **Google Drive API**.
-2. **Create a Service Account:**
-   - Go to **APIs & Services** &rarr; **Credentials** &rarr; **Create Credentials** &rarr; **Service Account**.
-   - Create and download a **JSON Key**.
-   - Save this file as `packages/backend/service-account.json` (this file is excluded by `.gitignore` for security).
-3. **Share Google Drive Folder:**
-   - On Google Drive, create a folder (e.g. `Diary Backups`).
-   - Click **Share** and add your Service Account email address with **Editor** permissions.
-   - Copy the Folder ID from the URL (the string after `folders/`) and put it into `packages/backend/.env`:
-     ```env
-     GOOGLE_DRIVE_FOLDER_ID="your_folder_id_here"
-     ```
-4. **Done!** The backend will automatically upload backup zips every night at 02:00 AM (configurable via `BACKUP_CRON` in `.env`), and you can click **"Backup Now"** anytime from the Milestones page!
+### How each user connects their Drive:
+1. Go to the **Milestones** tab in the web app.
+2. In the **"My Personal Cloud Backup"** section, click **"Connect My Google Drive"**.
+3. Sign in with your Google account and grant permission for the app to save backups (`drive.file` scope — safe and private).
+4. That's it! Your private snapshots will automatically back up to your Google Drive every night at 02:00 AM, or whenever you click **"Backup to My Drive Now 🚀"**.
+
+### Server Setup (for Admin / Developer):
+To enable the Google Sign-in button for all users:
+1. Go to [Google Cloud Console &rarr; Credentials](https://console.cloud.google.com/apis/credentials).
+2. Create an **OAuth 2.0 Client ID** (Application type: *Web application*).
+3. Add **Authorized redirect URI**:
+   ```
+   http://localhost:4000/api/backup/google/callback
+   ```
+4. Set the credentials in `packages/backend/.env`:
+   ```env
+   GOOGLE_CLIENT_ID="your_client_id.apps.googleusercontent.com"
+   GOOGLE_CLIENT_SECRET="your_client_secret"
+   GOOGLE_REDIRECT_URI="http://localhost:4000/api/backup/google/callback"
+   ```
+*(Even without Google OAuth credentials configured, every user can still export and download their personal `.zip` archive anytime via the "Download My Data (.zip)" button).*
 
 ---
 

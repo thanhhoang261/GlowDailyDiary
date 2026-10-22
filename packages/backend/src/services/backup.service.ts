@@ -4,85 +4,169 @@ import { fileURLToPath } from 'url';
 import { ZipArchive } from 'archiver';
 import cron from 'node-cron';
 import { google } from 'googleapis';
+import { prisma } from '../prisma.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const BACKUPS_DIR = path.resolve(__dirname, '../../backups');
 const UPLOAD_AUDIO_DIR = path.resolve(__dirname, '../../uploads/audio');
-const DB_PATH = path.resolve(__dirname, '../../prisma/dev.db');
 
 if (!fs.existsSync(BACKUPS_DIR)) {
   fs.mkdirSync(BACKUPS_DIR, { recursive: true });
 }
 
-export interface BackupResult {
-  success: boolean;
-  filename: string;
-  size: number;
-  filePath: string;
-  createdAt: string;
-  googleDriveUploaded: boolean;
-  googleDriveFileId?: string;
-  googleDriveLink?: string;
-  error?: string;
+export function isOAuthAppConfigured(): boolean {
+  return !!(
+    process.env.GOOGLE_CLIENT_ID &&
+    process.env.GOOGLE_CLIENT_SECRET &&
+    process.env.GOOGLE_CLIENT_ID.trim().length > 0 &&
+    process.env.GOOGLE_CLIENT_SECRET.trim().length > 0
+  );
 }
 
-let lastBackupInfo: BackupResult | null = null;
+export function getOAuth2Client() {
+  const clientId = process.env.GOOGLE_CLIENT_ID || '';
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
+  const redirectUri =
+    process.env.GOOGLE_REDIRECT_URI || 'http://localhost:4000/api/backup/google/callback';
 
-// Initialize Google Drive Auth Client
-function getGoogleDriveClient() {
-  try {
-    const keyPath = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH;
-    const inlineJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+}
 
-    // 1. Try Service Account Key
-    if (inlineJson) {
-      const credentials = JSON.parse(inlineJson);
-      const auth = new google.auth.GoogleAuth({
-        credentials,
-        scopes: ['https://www.googleapis.com/auth/drive.file'],
-      });
-      return google.drive({ version: 'v3', auth });
-    }
+// Generate Auth URL for user to grant Drive permission
+export function generateGoogleAuthUrl(userId: string): string {
+  const oauth2Client = getOAuth2Client();
 
-    if (keyPath) {
-      const resolvedPath = path.isAbsolute(keyPath)
-        ? keyPath
-        : path.resolve(__dirname, '../../', keyPath);
+  const scopes = [
+    'https://www.googleapis.com/auth/drive.file',
+    'https://www.googleapis.com/auth/userinfo.email',
+  ];
 
-      if (fs.existsSync(resolvedPath)) {
-        const auth = new google.auth.GoogleAuth({
-          keyFile: resolvedPath,
-          scopes: ['https://www.googleapis.com/auth/drive.file'],
-        });
-        return google.drive({ version: 'v3', auth });
+  return oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: scopes,
+    state: userId,
+  });
+}
+
+// Handle OAuth callback when user returns from Google
+export async function handleGoogleOAuthCallback(
+  code: string,
+  userId: string
+): Promise<{ email: string }> {
+  const oauth2Client = getOAuth2Client();
+  const { tokens } = await oauth2Client.getToken(code);
+  oauth2Client.setCredentials(tokens);
+
+  // Retrieve user's email address
+  const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
+  const userInfo = await oauth2.userinfo.get();
+  const email = userInfo.data.email || 'connected-account';
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      googleDriveConnected: true,
+      googleRefreshToken: tokens.refresh_token,
+      googleDriveEmail: email,
+    },
+  });
+
+  return { email };
+}
+
+// Disconnect user's Google Drive
+export async function disconnectUserGoogleDrive(userId: string): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      googleDriveConnected: false,
+      googleRefreshToken: null,
+      googleDriveEmail: null,
+      googleDriveFolderId: null,
+    },
+  });
+}
+
+// Create authenticated Drive client for a specific user using their stored refresh token
+export function getDriveClientForUser(refreshToken: string) {
+  const oauth2Client = getOAuth2Client();
+  oauth2Client.setCredentials({ refresh_token: refreshToken });
+  return google.drive({ version: 'v3', auth: oauth2Client });
+}
+
+// Ensure "Daily Glow Diary Backups" folder exists on user's Drive
+async function ensureUserDriveFolder(drive: any, userId: string, storedFolderId?: string | null): Promise<string> {
+  if (storedFolderId) {
+    try {
+      const res = await drive.files.get({ fileId: storedFolderId, fields: 'id, trashed' });
+      if (res.data && !res.data.trashed) {
+        return storedFolderId;
       }
+    } catch {
+      // If folder not found or deleted, create a new one
     }
-
-    // 2. Try OAuth2 Refresh Token
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
-
-    if (clientId && clientSecret && refreshToken) {
-      const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
-      oauth2Client.setCredentials({ refresh_token: refreshToken });
-      return google.drive({ version: 'v3', auth: oauth2Client });
-    }
-
-    return null;
-  } catch (error) {
-    console.warn('⚠️ Google Drive client initialization failed:', error);
-    return null;
   }
+
+  // Find or create folder named "Daily Glow Diary Backups"
+  const folderName = 'Daily Glow Diary Backups 🌸';
+  const query = `name = '${folderName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+  const existing = await drive.files.list({ q: query, fields: 'files(id, name)' });
+
+  if (existing.data.files && existing.data.files.length > 0) {
+    const folderId = existing.data.files[0].id;
+    await prisma.user.update({
+      where: { id: userId },
+      data: { googleDriveFolderId: folderId },
+    });
+    return folderId;
+  }
+
+  const created = await drive.files.create({
+    requestBody: {
+      name: folderName,
+      mimeType: 'application/vnd.google-apps.folder',
+    },
+    fields: 'id',
+  });
+
+  const newFolderId = created.data.id;
+  await prisma.user.update({
+    where: { id: userId },
+    data: { googleDriveFolderId: newFolderId },
+  });
+
+  return newFolderId;
 }
 
-// Create a local .zip archive of SQLite DB and Audio files
-export async function createLocalBackupZip(): Promise<{ filePath: string; filename: string; size: number }> {
+// Create a personalized backup archive (.zip) containing ONLY this user's data
+export async function createPerUserBackupZip(
+  userId: string
+): Promise<{ filePath: string; filename: string; size: number }> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      entries: {
+        orderBy: { date: 'asc' },
+      },
+    },
+  });
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  const userBackupsDir = path.join(BACKUPS_DIR, `user-${user.id}`);
+  if (!fs.existsSync(userBackupsDir)) {
+    fs.mkdirSync(userBackupsDir, { recursive: true });
+  }
+
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const filename = `glow-diary-backup-${timestamp}.zip`;
-  const filePath = path.join(BACKUPS_DIR, filename);
+  const safeUsername = user.username.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const filename = `glow-diary-${safeUsername}-${timestamp}.zip`;
+  const filePath = path.join(userBackupsDir, filename);
 
   return new Promise((resolve, reject) => {
     const output = fs.createWriteStream(filePath);
@@ -102,21 +186,63 @@ export async function createLocalBackupZip(): Promise<{ filePath: string; filena
 
     archive.pipe(output);
 
-    // 1. Add SQLite Database file if exists
-    if (fs.existsSync(DB_PATH)) {
-      archive.file(DB_PATH, { name: 'database/dev.db' });
+    // 1. User Profile file
+    const profile = {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      avatarEmoji: user.avatarEmoji,
+      targetDailyWords: user.targetDailyWords,
+      backupExportedAt: new Date().toISOString(),
+    };
+    archive.append(JSON.stringify(profile, null, 2), { name: 'profile.json' });
+
+    // 2. Entries file
+    const entriesData = user.entries.map((e) => {
+      let vocabList = [];
+      let gratitude = [];
+      try {
+        if (e.vocabList) vocabList = JSON.parse(e.vocabList);
+      } catch {}
+      try {
+        if (e.gratitude) gratitude = JSON.parse(e.gratitude);
+      } catch {}
+
+      return {
+        id: e.id,
+        date: e.date,
+        title: e.title,
+        content: e.content,
+        mood: e.mood,
+        weather: e.weather,
+        vocabList,
+        gratitude,
+        wordCount: e.wordCount,
+        audioFilename: e.audioFilename,
+        audioDuration: e.audioDuration,
+        promptQuestion: e.promptQuestion,
+        createdAt: e.createdAt,
+      };
+    });
+    archive.append(JSON.stringify(entriesData, null, 2), { name: 'entries.json' });
+
+    // 3. Audio Voice Notes belonging to this user
+    for (const entry of user.entries) {
+      if (entry.audioFilename) {
+        const audioPath = path.join(UPLOAD_AUDIO_DIR, entry.audioFilename);
+        if (fs.existsSync(audioPath)) {
+          archive.file(audioPath, { name: `audio/${entry.audioFilename}` });
+        }
+      }
     }
 
-    // 2. Add Audio Uploads folder if exists
-    if (fs.existsSync(UPLOAD_AUDIO_DIR)) {
-      archive.directory(UPLOAD_AUDIO_DIR, 'audio');
-    }
-
-    // 3. Add metadata info file
+    // 4. Metadata
     const meta = {
-      backupDate: new Date().toISOString(),
       appName: 'Daily Glow Diary',
-      version: '1.0.0',
+      totalEntries: user.entries.length,
+      totalWords: user.entries.reduce((acc, curr) => acc + curr.wordCount, 0),
+      backupDate: new Date().toISOString(),
+      ownerUsername: user.username,
     };
     archive.append(JSON.stringify(meta, null, 2), { name: 'backup-info.json' });
 
@@ -124,184 +250,179 @@ export async function createLocalBackupZip(): Promise<{ filePath: string; filena
   });
 }
 
-// Upload zip to Google Drive
-export async function uploadToGoogleDrive(
-  filePath: string,
-  filename: string
-): Promise<{ fileId: string; webViewLink?: string }> {
-  const drive = getGoogleDriveClient();
-  if (!drive) {
-    throw new Error('Google Drive is not configured. Please provide service account credentials.');
-  }
-
-  const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
-
-  const fileMetadata: any = {
-    name: filename,
-    mimeType: 'application/zip',
-  };
-
-  if (folderId && folderId.trim()) {
-    fileMetadata.parents = [folderId.trim()];
-  }
-
-  const media = {
-    mimeType: 'application/zip',
-    body: fs.createReadStream(filePath),
-  };
-
-  const response = await drive.files.create({
-    requestBody: fileMetadata,
-    media,
-    fields: 'id, name, webViewLink',
-  });
-
-  return {
-    fileId: response.data.id || '',
-    webViewLink: response.data.webViewLink || undefined,
-  };
-}
-
-// Prune old backups, keeping only the 10 most recent
-function pruneOldBackups() {
+// Prune old backups for a specific user, keeping only 7 latest
+function pruneUserBackups(userId: string) {
   try {
+    const userBackupsDir = path.join(BACKUPS_DIR, `user-${userId}`);
+    if (!fs.existsSync(userBackupsDir)) return;
+
     const files = fs
-      .readdirSync(BACKUPS_DIR)
-      .filter((f) => f.startsWith('glow-diary-backup-') && f.endsWith('.zip'))
+      .readdirSync(userBackupsDir)
+      .filter((f) => f.endsWith('.zip'))
       .map((f) => ({
-        name: f,
-        path: path.join(BACKUPS_DIR, f),
-        time: fs.statSync(path.join(BACKUPS_DIR, f)).mtimeMs,
+        path: path.join(userBackupsDir, f),
+        time: fs.statSync(path.join(userBackupsDir, f)).mtimeMs,
       }))
       .sort((a, b) => b.time - a.time);
 
-    if (files.length > 10) {
-      const toRemove = files.slice(10);
+    if (files.length > 7) {
+      const toRemove = files.slice(7);
       for (const item of toRemove) {
         fs.unlinkSync(item.path);
       }
     }
   } catch (e) {
-    console.warn('Pruning old backups error:', e);
+    console.warn('Pruning user backups error:', e);
   }
 }
 
-// Execute a full backup (local zip + Google Drive upload if connected)
-export async function runFullBackup(): Promise<BackupResult> {
-  const createdAt = new Date().toISOString();
-  console.log(`[Backup] Starting backup at ${createdAt}...`);
+// Backup a specific user's data to their own personal Google Drive
+export async function backupUserToPersonalDrive(userId: string): Promise<{
+  success: boolean;
+  filename: string;
+  size: number;
+  googleDriveUploaded: boolean;
+  fileId?: string;
+  webViewLink?: string;
+  message?: string;
+}> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
 
-  try {
-    const { filePath, filename, size } = await createLocalBackupZip();
-    let googleDriveUploaded = false;
-    let googleDriveFileId: string | undefined;
-    let googleDriveLink: string | undefined;
-    let driveError: string | undefined;
+  if (!user) {
+    throw new Error('User not found');
+  }
 
-    const driveClient = getGoogleDriveClient();
-    if (driveClient) {
-      try {
-        console.log(`[Backup] Uploading ${filename} to Google Drive...`);
-        const driveRes = await uploadToGoogleDrive(filePath, filename);
-        googleDriveUploaded = true;
-        googleDriveFileId = driveRes.fileId;
-        googleDriveLink = driveRes.webViewLink;
-        console.log(`[Backup] Successfully uploaded to Google Drive! File ID: ${driveRes.fileId}`);
-      } catch (err: any) {
-        console.error('[Backup] Google Drive upload failed:', err.message);
-        driveError = err.message;
-      }
-    } else {
-      console.log('[Backup] Google Drive not configured. Local zip saved successfully.');
+  // 1. Create personal zip archive
+  const { filePath, filename, size } = await createPerUserBackupZip(userId);
+
+  // 2. If user has Google Drive connected, upload to their Drive
+  if (user.googleDriveConnected && user.googleRefreshToken) {
+    try {
+      const drive = getDriveClientForUser(user.googleRefreshToken);
+      const folderId = await ensureUserDriveFolder(drive, userId, user.googleDriveFolderId);
+
+      const fileMetadata = {
+        name: filename,
+        parents: [folderId],
+        mimeType: 'application/zip',
+      };
+
+      const media = {
+        mimeType: 'application/zip',
+        body: fs.createReadStream(filePath),
+      };
+
+      const res = await drive.files.create({
+        requestBody: fileMetadata,
+        media,
+        fields: 'id, name, webViewLink',
+      });
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { lastBackupAt: new Date() },
+      });
+
+      pruneUserBackups(userId);
+
+      return {
+        success: true,
+        filename,
+        size,
+        googleDriveUploaded: true,
+        fileId: res.data.id || '',
+        webViewLink: res.data.webViewLink || undefined,
+        message: 'Personal backup successfully uploaded to your Google Drive! ☁️✨',
+      };
+    } catch (err: any) {
+      console.error(`Google Drive upload error for user ${user.username}:`, err.message);
+      return {
+        success: true,
+        filename,
+        size,
+        googleDriveUploaded: false,
+        message: `Local archive created, but Drive upload failed: ${err.message}`,
+      };
     }
-
-    pruneOldBackups();
-
-    const result: BackupResult = {
-      success: true,
-      filename,
-      size,
-      filePath,
-      createdAt,
-      googleDriveUploaded,
-      googleDriveFileId,
-      googleDriveLink,
-      error: driveError,
-    };
-
-    lastBackupInfo = result;
-    return result;
-  } catch (error: any) {
-    console.error('[Backup] Backup failed:', error);
-    const result: BackupResult = {
-      success: false,
-      filename: '',
-      size: 0,
-      filePath: '',
-      createdAt,
-      googleDriveUploaded: false,
-      error: error.message || 'Unknown backup error',
-    };
-    lastBackupInfo = result;
-    throw error;
   }
+
+  pruneUserBackups(userId);
+
+  return {
+    success: true,
+    filename,
+    size,
+    googleDriveUploaded: false,
+    message: 'Local personal archive created successfully! (Connect Google Drive to auto-upload to your cloud)',
+  };
 }
 
-// Get the latest backup zip file path for download
-export function getLatestBackupZip(): { filePath: string; filename: string } | null {
+// Get latest backup for a user
+export function getLatestUserBackup(userId: string): { filePath: string; filename: string } | null {
   try {
+    const userBackupsDir = path.join(BACKUPS_DIR, `user-${userId}`);
+    if (!fs.existsSync(userBackupsDir)) return null;
+
     const files = fs
-      .readdirSync(BACKUPS_DIR)
-      .filter((f) => f.startsWith('glow-diary-backup-') && f.endsWith('.zip'))
+      .readdirSync(userBackupsDir)
+      .filter((f) => f.endsWith('.zip'))
       .map((f) => ({
+        path: path.join(userBackupsDir, f),
         name: f,
-        path: path.join(BACKUPS_DIR, f),
-        time: fs.statSync(path.join(BACKUPS_DIR, f)).mtimeMs,
+        time: fs.statSync(path.join(userBackupsDir, f)).mtimeMs,
       }))
       .sort((a, b) => b.time - a.time);
 
-    if (files.length > 0) {
-      return {
-        filePath: files[0].path,
-        filename: files[0].name,
-      };
-    }
-    return null;
+    return files.length > 0 ? { filePath: files[0].path, filename: files[0].name } : null;
   } catch {
     return null;
   }
 }
 
-// Get backup system status
-export function getBackupStatus() {
-  const isGoogleDriveConfigured = !!getGoogleDriveClient();
-  const cronSchedule = process.env.BACKUP_CRON || '0 2 * * *';
-  const isCronEnabled = process.env.BACKUP_ENABLED !== 'false';
+// Get user backup status
+export async function getUserBackupStatus(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      googleDriveConnected: true,
+      googleDriveEmail: true,
+      autoBackupEnabled: true,
+      lastBackupAt: true,
+    },
+  });
 
-  const recentBackups = fs
-    .readdirSync(BACKUPS_DIR)
-    .filter((f) => f.startsWith('glow-diary-backup-') && f.endsWith('.zip'))
-    .map((f) => {
-      const stat = fs.statSync(path.join(BACKUPS_DIR, f));
-      return {
-        filename: f,
-        size: stat.size,
-        createdAt: stat.mtime.toISOString(),
-      };
-    })
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5);
+  const userBackupsDir = path.join(BACKUPS_DIR, `user-${userId}`);
+  let recentBackups: { filename: string; size: number; createdAt: string }[] = [];
+
+  if (fs.existsSync(userBackupsDir)) {
+    recentBackups = fs
+      .readdirSync(userBackupsDir)
+      .filter((f) => f.endsWith('.zip'))
+      .map((f) => {
+        const stat = fs.statSync(path.join(userBackupsDir, f));
+        return {
+          filename: f,
+          size: stat.size,
+          createdAt: stat.mtime.toISOString(),
+        };
+      })
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5);
+  }
 
   return {
-    isGoogleDriveConfigured,
-    isCronEnabled,
-    cronSchedule,
-    lastBackup: lastBackupInfo,
+    googleDriveConnected: user?.googleDriveConnected || false,
+    googleDriveEmail: user?.googleDriveEmail || null,
+    autoBackupEnabled: user?.autoBackupEnabled ?? true,
+    lastBackupAt: user?.lastBackupAt ? user.lastBackupAt.toISOString() : null,
+    isOAuthAppConfigured: isOAuthAppConfigured(),
     recentBackups,
   };
 }
 
-// Initialize Periodic Cron Scheduler
+// Cron Scheduler: Backs up each connected user periodically
 export function initBackupCron() {
   const isEnabled = process.env.BACKUP_ENABLED !== 'false';
   const cronExpression = process.env.BACKUP_CRON || '0 2 * * *'; // Default 02:00 AM daily
@@ -311,18 +432,32 @@ export function initBackupCron() {
     return;
   }
 
-  if (!cron.validate(cronExpression)) {
-    console.warn(`⚠️ Invalid cron expression: "${cronExpression}". Defaulting to "0 2 * * *"`);
-  }
-
   const validExpr = cron.validate(cronExpression) ? cronExpression : '0 2 * * *';
 
   cron.schedule(validExpr, async () => {
-    console.log(`⏰ Triggering scheduled backup job (${validExpr})...`);
+    console.log(`⏰ [Cron] Running nightly personal backup check (${validExpr})...`);
     try {
-      await runFullBackup();
+      // Find all users who have connected their personal Google Drive and enabled auto-backup
+      const connectedUsers = await prisma.user.findMany({
+        where: {
+          googleDriveConnected: true,
+          autoBackupEnabled: true,
+          googleRefreshToken: { not: null },
+        },
+      });
+
+      console.log(`⏰ [Cron] Found ${connectedUsers.length} user(s) with personal Drive sync active.`);
+
+      for (const u of connectedUsers) {
+        try {
+          console.log(`⏰ [Cron] Backing up data for user: ${u.username}...`);
+          await backupUserToPersonalDrive(u.id);
+        } catch (err: any) {
+          console.error(`⏰ [Cron] Backup failed for user ${u.username}:`, err.message);
+        }
+      }
     } catch (e) {
-      console.error('Scheduled backup encountered an error:', e);
+      console.error('Scheduled cron backup error:', e);
     }
   });
 

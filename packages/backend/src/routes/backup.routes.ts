@@ -1,18 +1,28 @@
 import { Router } from 'express';
 import {
-  triggerBackup,
-  downloadLatestBackup,
-  getStatus,
+  getAuthUrl,
+  googleOAuthCallback,
+  disconnectDrive,
+  triggerUserBackup,
+  downloadUserBackup,
+  getUserStatus,
+  updateBackupSettings,
 } from '../controllers/backup.controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
 
-// Protected with JWT auth
+// Public Google OAuth redirect callback
+router.get('/google/callback', googleOAuthCallback);
+
+// All other backup routes require user login
 router.use(authMiddleware);
 
-router.post('/now', triggerBackup);
-router.get('/download', downloadLatestBackup);
-router.get('/status', getStatus);
+router.get('/google/auth-url', getAuthUrl);
+router.post('/google/disconnect', disconnectDrive);
+router.post('/now', triggerUserBackup);
+router.get('/download', downloadUserBackup);
+router.get('/status', getUserStatus);
+router.patch('/settings', updateBackupSettings);
 
 export default router;

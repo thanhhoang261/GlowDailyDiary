@@ -203,3 +203,12 @@ export interface RegisterDto {
   name: string;
   avatarEmoji?: string;
 }
+
+export interface UserBackupStatus {
+  googleDriveConnected: boolean;
+  googleDriveEmail?: string | null;
+  autoBackupEnabled: boolean;
+  lastBackupAt?: string | null;
+  isOAuthAppConfigured: boolean;
+  recentBackups: { filename: string; size: number; createdAt: string }[];
+}
