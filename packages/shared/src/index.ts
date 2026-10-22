@@ -97,12 +97,36 @@ export interface VocabItem {
   example?: string;
 }
 
+export interface AiChangeItem {
+  original: string;
+  corrected: string;
+  type: 'grammar' | 'spelling' | 'vocabulary' | 'naturalness';
+  explanation: string;
+}
+
+export interface AiReviewResult {
+  correctedTitle: string;
+  correctedContent: string;
+  changes: AiChangeItem[];
+  encouragement?: string;
+  overallFeedback?: string;
+  analyzedAt: string;
+}
+
+export interface AiReviewRequestDto {
+  date?: string;
+  title?: string;
+  content: string;
+  apiKey?: string;
+}
+
 export interface UserProfile {
   id: string;
   username: string;
   name: string;
   avatarEmoji?: string;
   targetDailyWords?: number;
+  hasOpenaiKey?: boolean;
   createdAt: string;
 }
 
@@ -120,6 +144,7 @@ export interface DiaryEntry {
   audioDuration?: number | null; // in seconds
   wordCount: number;
   promptQuestion?: string | null;
+  aiReview?: AiReviewResult | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -134,6 +159,7 @@ export interface CreateEntryDto {
   gratitude?: string[];
   audioDuration?: number | null;
   promptQuestion?: string | null;
+  aiReview?: AiReviewResult | null;
 }
 
 export interface UpdateEntryDto extends Partial<CreateEntryDto> {

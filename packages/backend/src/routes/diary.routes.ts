@@ -7,6 +7,9 @@ import {
   getStreakStats,
   getRecentEntries,
   searchEntries,
+  reviewEntryWithAi,
+  getAiConfigController,
+  setAiKeyController,
 } from '../controllers/diary.controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -22,5 +25,10 @@ router.get('/month', getMonthEntries);
 router.get('/streak', getStreakStats);
 router.get('/recent', getRecentEntries);
 router.get('/search', searchEntries);
+
+// AI Review & Key Management
+router.post('/ai/review', reviewEntryWithAi);
+router.get('/ai/config', getAiConfigController);
+router.post('/ai/key', setAiKeyController);
 
 export default router;

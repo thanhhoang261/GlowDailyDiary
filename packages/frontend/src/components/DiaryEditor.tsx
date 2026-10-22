@@ -12,11 +12,12 @@ import {
   Heart,
   CloudSun,
 } from 'lucide-react';
-import { MoodType, DiaryEntry } from '@diary/shared';
+import { MoodType, DiaryEntry, AiReviewResult } from '@diary/shared';
 import { api } from '../services/api';
 import { MoodPicker } from './MoodPicker';
 import { EnglishPromptBanner } from './EnglishPromptBanner';
 import { AudioRecorder } from './AudioRecorder';
+import { AiReviewSection } from './AiReviewSection';
 import { useAuth } from '../context/AuthContext';
 
 interface DiaryEditorProps {
@@ -51,6 +52,8 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
   const [mood, setMood] = useState<MoodType>('joyful');
   const [weather, setWeather] = useState<string>('sunny');
   const [promptQuestion, setPromptQuestion] = useState<string | null>(null);
+  const [editorView, setEditorView] = useState<'original' | 'revised'>('original');
+  const [aiReview, setAiReview] = useState<AiReviewResult | null>(null);
 
   // Gratitude list
   const [gratitudeList, setGratitudeList] = useState<string[]>([]);
@@ -94,6 +97,8 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
         setAudioUrl(res.entry.audioUrl || null);
         setAudioDuration(res.entry.audioDuration || null);
         setPromptQuestion(res.entry.promptQuestion || null);
+        setAiReview(res.entry.aiReview || null);
+        setEditorView('original');
         setHasExistingEntry(true);
       } else {
         // Reset for empty new entry
@@ -105,6 +110,8 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
         setAudioUrl(null);
         setAudioDuration(null);
         setPromptQuestion(null);
+        setAiReview(null);
+        setEditorView('original');
         setHasExistingEntry(false);
       }
     } catch (err) {
@@ -166,6 +173,7 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
         vocabList: [],
         gratitude: gratitudeList,
         promptQuestion,
+        aiReview,
       });
 
       // 2. Upload audio if freshly recorded
@@ -336,26 +344,45 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
 
           {/* Title & Main Textarea */}
           <div className="bg-white/95 rounded-3xl p-5 sm:p-7 border border-pink-100 shadow-soft flex flex-col gap-4">
-            {/* Title Input */}
-            <input
-              type="text"
-              placeholder="Give today's story a title in English... 🌸"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="text-xl sm:text-2xl font-black text-glow-cocoa placeholder:text-pink-300/80 bg-transparent border-b border-pink-100 pb-2 focus:outline-none focus:border-rose-400 transition"
+            {/* AI Review Segment Switch & Trigger */}
+            <AiReviewSection
+              date={date}
+              title={title}
+              content={content}
+              aiReview={aiReview}
+              activeView={editorView}
+              onToggleView={setEditorView}
+              onApplyRevised={(newTitle, newContent) => {
+                if (newTitle) setTitle(newTitle);
+                if (newContent) setContent(newContent);
+              }}
+              onReviewSaved={(newReview) => setAiReview(newReview)}
             />
 
-            {/* Content Textarea */}
-            <div className="relative">
-              <textarea
-                ref={textareaRef}
-                rows={10}
-                placeholder="Write your day freely in English... What happened? How did it make you feel? What did you discover? Every word is a step forward! ✍️"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="w-full p-4 rounded-2xl bg-pink-50/20 hover:bg-pink-50/40 focus:bg-white text-base leading-relaxed text-glow-cocoa placeholder:text-stone-400/80 border border-pink-100/80 focus:border-rose-300 focus:ring-4 focus:ring-pink-100 focus:outline-none transition resize-y font-medium"
-              />
-            </div>
+            {editorView === 'original' && (
+              <>
+                {/* Title Input */}
+                <input
+                  type="text"
+                  placeholder="Give today's story a title in English... 🌸"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="text-xl sm:text-2xl font-black text-glow-cocoa placeholder:text-pink-300/80 bg-transparent border-b border-pink-100 pb-2 focus:outline-none focus:border-rose-400 transition"
+                />
+
+                {/* Content Textarea */}
+                <div className="relative">
+                  <textarea
+                    ref={textareaRef}
+                    rows={10}
+                    placeholder="Write your day freely in English... What happened? How did it make you feel? What did you discover? Every word is a step forward! ✍️"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    className="w-full p-4 rounded-2xl bg-pink-50/20 hover:bg-pink-50/40 focus:bg-white text-base leading-relaxed text-glow-cocoa placeholder:text-stone-400/80 border border-pink-100/80 focus:border-rose-300 focus:ring-4 focus:ring-pink-100 focus:outline-none transition resize-y font-medium"
+                  />
+                </div>
+              </>
+            )}
 
             {/* English Word Counter & Target Progress */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-pink-100/70">

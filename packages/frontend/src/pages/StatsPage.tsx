@@ -16,10 +16,35 @@ export const StatsPage: React.FC = () => {
   const [avatarEmoji, setAvatarEmoji] = useState(user?.avatarEmoji || '🌸');
   const [targetWords, setTargetWords] = useState(user?.targetDailyWords || 80);
   const [saveMsg, setSaveMsg] = useState(false);
+  const [aiConfig, setAiConfig] = useState<{ hasCustomKey: boolean; hasEnvKey: boolean; isReady: boolean } | null>(null);
+  const [openaiKeyInput, setOpenaiKeyInput] = useState('');
+  const [keySavedMsg, setKeySavedMsg] = useState(false);
 
   useEffect(() => {
     fetchStats();
+    fetchAiConfig();
   }, []);
+
+  const fetchAiConfig = async () => {
+    try {
+      const res = await api.getAiConfig();
+      setAiConfig(res.config);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleSaveAiKey = async () => {
+    try {
+      await api.setAiKey(openaiKeyInput.trim() || null);
+      setOpenaiKeyInput('');
+      setKeySavedMsg(true);
+      await fetchAiConfig();
+      setTimeout(() => setKeySavedMsg(false), 3000);
+    } catch (err: any) {
+      alert(`Failed to save OpenAI key: ${err.message}`);
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -224,6 +249,46 @@ export const StatsPage: React.FC = () => {
             />
             <p className="text-[11px] text-glow-muted">
               Aim for 60–100 words/day to keep it fun and stress-free!
+            </p>
+          </div>
+
+          {/* OpenAI Key Configuration */}
+          <div className="flex flex-col gap-1.5 pt-3 border-t border-pink-100">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-glow-muted uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>OpenAI API Key (Grammar Review)</span>
+              </label>
+              {aiConfig?.isReady && (
+                <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  {aiConfig.hasCustomKey ? 'Custom key active' : 'Server key active'}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="password"
+                placeholder={aiConfig?.hasCustomKey ? 'sk-••••••••••••••••' : 'Paste sk-... key to enable AI review'}
+                value={openaiKeyInput}
+                onChange={(e) => setOpenaiKeyInput(e.target.value)}
+                className="flex-1 px-4 py-2 rounded-2xl bg-pink-50/50 border border-pink-100 focus:outline-none focus:border-rose-400 font-mono text-xs text-glow-cocoa"
+              />
+              <button
+                type="button"
+                onClick={handleSaveAiKey}
+                disabled={!openaiKeyInput.trim() && !aiConfig?.hasCustomKey}
+                className="px-4 py-2 rounded-2xl bg-pink-100/80 hover:bg-pink-200 text-glow-cocoa text-xs font-bold transition bouncy-button disabled:opacity-40"
+              >
+                {openaiKeyInput.trim() ? 'Save Key' : 'Clear'}
+              </button>
+            </div>
+            {keySavedMsg && (
+              <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
+                <Check className="w-3.5 h-3.5 text-emerald-500" /> OpenAI key updated!
+              </span>
+            )}
+            <p className="text-[11px] text-glow-muted">
+              Used strictly to check spelling and grammar for your English journal entries.
             </p>
           </div>
 

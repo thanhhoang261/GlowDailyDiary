@@ -7,6 +7,7 @@ import {
   CreateEntryDto,
   DaySummary,
   StreakStats,
+  AiReviewResult,
 } from '@diary/shared';
 
 const TOKEN_KEY = 'glow_diary_token';
@@ -176,4 +177,22 @@ export const api = {
     a.remove();
     window.URL.revokeObjectURL(url);
   },
+
+  // AI Grammar & Spelling Review
+  reviewWithAi: (data: { date?: string; title?: string; content: string; apiKey?: string; saveKey?: boolean }) =>
+    request<{ result: AiReviewResult }>('/api/diary/ai/review', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getAiConfig: () =>
+    request<{ config: { hasCustomKey: boolean; hasEnvKey: boolean; isReady: boolean } }>('/api/diary/ai/config', {
+      method: 'GET',
+    }),
+
+  setAiKey: (apiKey: string | null) =>
+    request<{ success: boolean; message: string }>('/api/diary/ai/key', {
+      method: 'POST',
+      body: JSON.stringify({ apiKey }),
+    }),
 };

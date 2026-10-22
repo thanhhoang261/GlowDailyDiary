@@ -1,7 +1,8 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth.js';
 import { prisma } from '../prisma.js';
-import { DiaryEntry, DaySummary, StreakStats, MoodType, VocabItem } from '@diary/shared';
+import { DiaryEntry, DaySummary, StreakStats, MoodType, VocabItem, AiReviewResult } from '@diary/shared';
+import { reviewDiaryWithAi, saveUserApiKey, getUserAiConfig } from '../services/ai.service.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -20,6 +21,7 @@ function countEnglishWords(text: string): number {
 function formatDiaryEntry(entry: any): DiaryEntry {
   let vocabList: VocabItem[] = [];
   let gratitude: string[] = [];
+  let aiReview: AiReviewResult | null = null;
 
   if (entry.vocabList) {
     try {
@@ -37,6 +39,14 @@ function formatDiaryEntry(entry: any): DiaryEntry {
     }
   }
 
+  if (entry.aiReview) {
+    try {
+      aiReview = JSON.parse(entry.aiReview);
+    } catch {
+      aiReview = null;
+    }
+  }
+
   return {
     id: entry.id,
     userId: entry.userId,
@@ -51,6 +61,7 @@ function formatDiaryEntry(entry: any): DiaryEntry {
     audioDuration: entry.audioDuration,
     wordCount: entry.wordCount,
     promptQuestion: entry.promptQuestion,
+    aiReview,
     createdAt: entry.createdAt.toISOString(),
     updatedAt: entry.updatedAt.toISOString(),
   };
@@ -92,6 +103,7 @@ export async function saveEntry(req: AuthenticatedRequest, res: Response): Promi
       vocabList = [],
       gratitude = [],
       promptQuestion,
+      aiReview,
     } = req.body;
 
     if (!date) {
@@ -105,6 +117,7 @@ export async function saveEntry(req: AuthenticatedRequest, res: Response): Promi
 
     const serializedVocab = JSON.stringify(vocabList);
     const serializedGratitude = JSON.stringify(gratitude);
+    const serializedAiReview = aiReview ? JSON.stringify(aiReview) : null;
 
     const entry = await prisma.diaryEntry.upsert({
       where: {
@@ -122,6 +135,7 @@ export async function saveEntry(req: AuthenticatedRequest, res: Response): Promi
         gratitude: serializedGratitude,
         wordCount,
         promptQuestion: promptQuestion || null,
+        ...(aiReview !== undefined ? { aiReview: serializedAiReview } : {}),
       },
       create: {
         userId: req.userId!,
@@ -134,6 +148,7 @@ export async function saveEntry(req: AuthenticatedRequest, res: Response): Promi
         gratitude: serializedGratitude,
         wordCount,
         promptQuestion: promptQuestion || null,
+        aiReview: serializedAiReview,
       },
     });
 
@@ -388,5 +403,79 @@ export async function searchEntries(req: AuthenticatedRequest, res: Response): P
   } catch (error) {
     console.error('searchEntries error:', error);
     res.status(500).json({ message: 'Error searching entries' });
+  }
+}
+
+export async function reviewEntryWithAi(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const { date, title, content, apiKey, saveKey } = req.body;
+
+    if (!content || !content.trim()) {
+      res.status(400).json({ message: 'Content is empty. Please write some English words first!' });
+      return;
+    }
+
+    if (saveKey && apiKey && apiKey.trim().startsWith('sk-')) {
+      await saveUserApiKey(req.userId!, apiKey.trim());
+    }
+
+    const result = await reviewDiaryWithAi({
+      userId: req.userId,
+      title,
+      content,
+      apiKey,
+    });
+
+    // If date is provided, update existing entry in database with the AI review
+    if (date) {
+      const existing = await prisma.diaryEntry.findUnique({
+        where: {
+          userId_date: {
+            userId: req.userId!,
+            date,
+          },
+        },
+      });
+      if (existing) {
+        await prisma.diaryEntry.update({
+          where: { id: existing.id },
+          data: { aiReview: JSON.stringify(result) },
+        });
+      }
+    }
+
+    res.json({ result });
+  } catch (error: any) {
+    console.error('AI Review error:', error);
+    if (error.message === 'NO_API_KEY') {
+      res.status(400).json({
+        code: 'NO_API_KEY',
+        message: 'Please provide your OpenAI API key to use grammar & spelling review.',
+      });
+      return;
+    }
+    res.status(500).json({ message: error.message || 'Error reviewing entry with AI' });
+  }
+}
+
+export async function getAiConfigController(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const config = await getUserAiConfig(req.userId!);
+    res.json({ config });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message || 'Error fetching AI config' });
+  }
+}
+
+export async function setAiKeyController(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const { apiKey } = req.body;
+    await saveUserApiKey(req.userId!, apiKey || null);
+    res.json({
+      success: true,
+      message: apiKey ? 'OpenAI key saved successfully!' : 'OpenAI key cleared.',
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message || 'Error saving AI key' });
   }
 }
