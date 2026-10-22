@@ -38,19 +38,21 @@ export async function googleOAuthCallback(req: Request, res: Response): Promise<
     const code = req.query.code as string;
     const userId = req.query.state as string;
 
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const rawClientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const clientUrl = rawClientUrl.replace(/\/+$/, '');
 
     if (!code || !userId) {
-      res.redirect(`${clientUrl}?drive_connected=error&reason=missing_code_or_user`);
+      res.redirect(`${clientUrl}/?drive_connected=error&reason=missing_code_or_user`);
       return;
     }
 
     await handleGoogleOAuthCallback(code, userId);
-    res.redirect(`${clientUrl}?drive_connected=success`);
+    res.redirect(`${clientUrl}/?drive_connected=success`);
   } catch (error: any) {
     console.error('googleOAuthCallback error:', error);
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-    res.redirect(`${clientUrl}?drive_connected=error&reason=${encodeURIComponent(error.message)}`);
+    const rawClientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const clientUrl = rawClientUrl.replace(/\/+$/, '');
+    res.redirect(`${clientUrl}/?drive_connected=error&reason=${encodeURIComponent(error.message)}`);
   }
 }
 
