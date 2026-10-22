@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Mic, Calendar, Heart, ArrowRight } from 'lucide-react';
 import { DiaryEntry, MOODS, MoodType } from '@diary/shared';
 import { api } from '../services/api';
+import { CuteAudioPlayer } from '../components/CuteAudioPlayer';
 
 interface HistoryPageProps {
   onSelectDate: (date: string) => void;
@@ -157,16 +158,15 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ onSelectDate }) => {
                   {entry.content || (entry.audioUrl ? 'Voice note recorded for this day.' : 'No text written.')}
                 </p>
 
-                {/* Inline Audio Player if audio exists */}
+                {/* Inline Cute Audio Player if audio exists */}
                 {entry.audioUrl && (
                   <div
                     onClick={(e) => e.stopPropagation()}
-                    className="pt-2"
+                    className="pt-1"
                   >
-                    <audio
-                      controls
+                    <CuteAudioPlayer
                       src={entry.audioUrl}
-                      className="w-full h-8 accent-pink-500"
+                      initialDuration={entry.audioDuration}
                     />
                   </div>
                 )}

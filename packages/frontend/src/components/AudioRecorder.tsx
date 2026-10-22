@@ -373,7 +373,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
             <div className="flex-1 flex flex-col gap-1">
               <div className="flex justify-between text-xs text-glow-muted font-mono font-semibold">
                 <span>{formatTime(playbackTime)}</span>
-                <span>{formatTime(totalDuration)}</span>
+                <span>{totalDuration > 0 ? formatTime(totalDuration) : '--:--'}</span>
               </div>
               <input
                 type="range"
