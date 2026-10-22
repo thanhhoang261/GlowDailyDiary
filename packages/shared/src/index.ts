@@ -13,6 +13,9 @@ export interface MoodMeta {
   label: string;
   color: string; // Tailwind color class or hex
   bgSoft: string;
+  sticker: string;
+  stickerGif: string;
+  bubuDuduAction: string;
 }
 
 export const MOODS: Record<MoodType, MoodMeta> = {
@@ -21,49 +24,70 @@ export const MOODS: Record<MoodType, MoodMeta> = {
     emoji: '🥰',
     label: 'Joyful & Happy',
     color: '#F472B6',
-    bgSoft: '#FDF2F8'
+    bgSoft: '#FDF2F8',
+    sticker: '/bubu-dudu/mood-joyful.png',
+    stickerGif: '/bubu-dudu/mood-joyful.gif',
+    bubuDuduAction: 'Bubu & Dudu dancing happily cheek to cheek'
   },
   calm: {
     type: 'calm',
     emoji: '🌿',
     label: 'Calm & Peaceful',
     color: '#34D399',
-    bgSoft: '#ECFDF5'
+    bgSoft: '#ECFDF5',
+    sticker: '/bubu-dudu/mood-calm.png',
+    stickerGif: '/bubu-dudu/mood-calm.gif',
+    bubuDuduAction: 'Bubu & Dudu sipping hot cocoa under blanket'
   },
   energetic: {
     type: 'energetic',
     emoji: '⚡',
     label: 'Energetic & Pumped',
     color: '#FBBF24',
-    bgSoft: '#FEFCE8'
+    bgSoft: '#FEFCE8',
+    sticker: '/bubu-dudu/mood-energetic.png',
+    stickerGif: '/bubu-dudu/mood-energetic.gif',
+    bubuDuduAction: 'Bubu ready for adventure with hat & backpack'
   },
   grateful: {
     type: 'grateful',
     emoji: '💖',
     label: 'Heartful & Grateful',
     color: '#FB7185',
-    bgSoft: '#FFF1F2'
+    bgSoft: '#FFF1F2',
+    sticker: '/bubu-dudu/mood-grateful.png',
+    stickerGif: '/bubu-dudu/mood-grateful.gif',
+    bubuDuduAction: 'Bubu hugging Dudu with floating hearts'
   },
   reflective: {
     type: 'reflective',
     emoji: '💭',
     label: 'Deep & Reflective',
     color: '#818CF8',
-    bgSoft: '#EEF2FF'
+    bgSoft: '#EEF2FF',
+    sticker: '/bubu-dudu/mood-reflective.png',
+    stickerGif: '/bubu-dudu/mood-reflective.gif',
+    bubuDuduAction: 'Bubu & Dudu having a peaceful cozy evening'
   },
   tired: {
     type: 'tired',
     emoji: '🥱',
     label: 'Tired & Cozy',
     color: '#9CA3AF',
-    bgSoft: '#F3F4F6'
+    bgSoft: '#F3F4F6',
+    sticker: '/bubu-dudu/mood-tired.png',
+    stickerGif: '/bubu-dudu/mood-tired.gif',
+    bubuDuduAction: 'Bubu & Dudu sleeping soundly in pajamas'
   },
   sad: {
     type: 'sad',
     emoji: '🌧️',
     label: 'Gentle Blue / Down',
     color: '#60A5FA',
-    bgSoft: '#EFF6FF'
+    bgSoft: '#EFF6FF',
+    sticker: '/bubu-dudu/mood-sad.png',
+    stickerGif: '/bubu-dudu/mood-sad.gif',
+    bubuDuduAction: 'Dudu crying gentle tears needing comfort'
   }
 };
 

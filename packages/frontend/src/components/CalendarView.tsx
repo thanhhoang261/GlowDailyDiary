@@ -265,9 +265,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 {/* Mood Sticker & Content preview */}
                 {summary ? (
                   <div className="flex flex-col items-center justify-center my-auto">
-                    <span className="text-xl sm:text-2xl transform group-hover:scale-115 transition duration-150">
-                      {moodMeta ? moodMeta.emoji : '🌸'}
-                    </span>
+                    {moodMeta?.sticker ? (
+                      <img
+                        src={moodMeta.sticker}
+                        alt={moodMeta.label}
+                        className="w-8 h-8 sm:w-9 sm:h-9 object-contain transform group-hover:scale-115 transition duration-150 drop-shadow-xs"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="text-xl sm:text-2xl transform group-hover:scale-115 transition duration-150">
+                        {moodMeta ? moodMeta.emoji : '🌸'}
+                      </span>
+                    )}
                     <span className="text-[10px] font-bold text-glow-muted truncate max-w-full mt-0.5">
                       {summary.wordCount > 0 ? `${summary.wordCount} words` : 'Voice entry'}
                     </span>

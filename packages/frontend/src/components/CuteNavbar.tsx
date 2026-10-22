@@ -2,6 +2,7 @@ import React from 'react';
 import { PenLine, Calendar, BookOpen, BarChart3, LogOut, Flame, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { StreakStats } from '@diary/shared';
+import { BubuAvatar } from './BubuAvatar';
 
 export type NavTab = 'today' | 'calendar' | 'journey' | 'stats';
 
@@ -33,15 +34,19 @@ export const CuteNavbar: React.FC<CuteNavbarProps> = ({
           onClick={() => onTabChange('today')}
           className="flex items-center gap-2.5 cursor-pointer group"
         >
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-200 via-pink-200 to-amber-100 flex items-center justify-center text-xl shadow-soft group-hover:scale-105 transition duration-200">
-            🌸
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-200 via-pink-200 to-amber-100 flex items-center justify-center p-0.5 shadow-soft group-hover:scale-105 transition duration-200 overflow-hidden border border-pink-200/50">
+            <img
+              src="/bubu-dudu/bubu-dudu-snuggle.gif"
+              alt="Bubu & Dudu"
+              className="w-full h-full object-cover"
+            />
           </div>
           <div>
             <h1 className="font-extrabold text-glow-cocoa text-lg leading-tight tracking-tight flex items-center gap-1.5">
-              Daily Glow <Heart className="w-3.5 h-3.5 fill-rose-400 text-rose-400 inline" />
+              Bubu & Dudu Glow <Heart className="w-3.5 h-3.5 fill-rose-400 text-rose-400 inline" />
             </h1>
             <p className="text-[11px] font-semibold text-glow-muted uppercase tracking-wider">
-              English Journal & Voice
+              Daily English Diary & Voice
             </p>
           </div>
         </div>
@@ -87,8 +92,8 @@ export const CuteNavbar: React.FC<CuteNavbarProps> = ({
           )}
 
           {/* User Avatar */}
-          <div className="flex items-center gap-2 bg-pink-50/80 pl-2 pr-3 py-1 rounded-2xl border border-pink-100">
-            <span className="text-lg">{user?.avatarEmoji || '✨'}</span>
+          <div className="flex items-center gap-2 bg-pink-50/80 pl-1.5 pr-3 py-1 rounded-2xl border border-pink-100">
+            <BubuAvatar avatar={user?.avatarEmoji} size="xs" />
             <span className="text-xs font-bold text-glow-cocoa hidden sm:inline max-w-[90px] truncate">
               {user?.name || user?.username}
             </span>

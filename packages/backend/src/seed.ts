@@ -22,7 +22,7 @@ async function main() {
       username,
       passwordHash,
       name: 'Lovely Explorer',
-      avatarEmoji: '✨',
+      avatarEmoji: 'bubu-peace',
       targetDailyWords: 80,
     },
   });

@@ -10,10 +10,12 @@ import audioRoutes from './routes/audio.routes.js';
 import backupRoutes from './routes/backup.routes.js';
 import { initBackupCron } from './services/backup.service.js';
 
-dotenv.config();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Load environment variables (current directory and project root fallback)
+dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 5173;

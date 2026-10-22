@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Heart, Sparkles, ArrowRight, Lock, User, KeyRound } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { BUBU_AVATARS, BubuAvatar } from '../components/BubuAvatar';
 
 export const AuthPage: React.FC = () => {
   const { login, register } = useAuth();
@@ -9,7 +10,7 @@ export const AuthPage: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [avatarEmoji, setAvatarEmoji] = useState('🌸');
+  const [avatarEmoji, setAvatarEmoji] = useState('bubu-peace');
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -60,16 +61,20 @@ export const AuthPage: React.FC = () => {
       <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-4xl p-6 sm:p-8 border border-pink-100 shadow-cute relative z-10 flex flex-col gap-6">
         {/* Header with mascot */}
         <div className="text-center flex flex-col items-center">
-          <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-pink-200 via-rose-200 to-amber-100 flex items-center justify-center text-3xl shadow-soft mb-3 animate-floatCute">
-            🌸
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-pink-200 via-rose-100 to-amber-100 flex items-center justify-center p-1 shadow-soft mb-2 overflow-hidden border border-pink-200/60 animate-floatCute">
+            <img
+              src="/bubu-dudu/bubu-dudu-cozy.gif"
+              alt="Bubu & Dudu Mascot"
+              className="w-full h-full object-cover rounded-2xl"
+            />
           </div>
           <h1 className="text-2xl font-black text-glow-cocoa tracking-tight flex items-center gap-1.5">
-            Daily Glow Diary <Heart className="w-4 h-4 fill-rose-400 text-rose-400 inline" />
+            Bubu & Dudu English Diary <Heart className="w-4 h-4 fill-rose-400 text-rose-400 inline" />
           </h1>
           <p className="text-xs font-semibold text-glow-muted mt-1">
             {isRegister
-              ? 'Begin your cozy English writing & speaking journey'
-              : 'Welcome back to your personal sanctuary'}
+              ? 'Join Bubu & Dudu on your cozy English writing & speaking journey'
+              : "Welcome back! Bubu & Dudu are waiting for today's story"}
           </p>
         </div>
 
@@ -113,23 +118,24 @@ export const AuthPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-glow-muted uppercase tracking-wider">
-                  Choose Avatar Emoji
+                  Choose Bubu & Dudu Mascot
                 </label>
-                <div className="flex gap-2">
-                  {['🌸', '✨', '🌿', '🍯', '🧸', '🍓'].map((e) => (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {BUBU_AVATARS.map((av) => (
                     <button
-                      key={e}
+                      key={av.id}
                       type="button"
-                      onClick={() => setAvatarEmoji(e)}
-                      className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg border transition ${
-                        avatarEmoji === e
-                          ? 'border-pink-400 bg-pink-100 scale-105'
-                          : 'border-pink-100 bg-pink-50/30'
+                      onClick={() => setAvatarEmoji(av.id)}
+                      className={`w-11 h-11 rounded-2xl p-1 flex items-center justify-center border transition bouncy-button shrink-0 ${
+                        avatarEmoji === av.id
+                          ? 'border-rose-400 bg-rose-50 scale-110 shadow-cute ring-2 ring-rose-200'
+                          : 'border-pink-100 bg-white/80 hover:bg-white'
                       }`}
+                      title={av.label}
                     >
-                      {e}
+                      <img src={av.src} alt={av.label} className="w-full h-full object-contain" />
                     </button>
                   ))}
                 </div>

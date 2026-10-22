@@ -106,9 +106,20 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ onSelectDate }) => {
                 {/* Entry header */}
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5">
-                    <span className="text-2xl p-1.5 rounded-2xl bg-pink-50">
-                      {moodMeta ? moodMeta.emoji : '🌸'}
-                    </span>
+                    {moodMeta?.sticker ? (
+                      <div className="w-11 h-11 rounded-2xl bg-pink-50/80 p-1 flex items-center justify-center border border-pink-100 group-hover:scale-105 transition">
+                        <img
+                          src={moodMeta.sticker}
+                          alt={moodMeta.label}
+                          className="w-9 h-9 object-contain"
+                          loading="lazy"
+                        />
+                      </div>
+                    ) : (
+                      <span className="text-2xl p-1.5 rounded-2xl bg-pink-50">
+                        {moodMeta ? moodMeta.emoji : '🌸'}
+                      </span>
+                    )}
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-extrabold text-glow-cocoa">

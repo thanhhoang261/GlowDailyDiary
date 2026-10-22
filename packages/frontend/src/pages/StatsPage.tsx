@@ -4,8 +4,7 @@ import { StreakStats } from '@diary/shared';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { BackupManager } from '../components/BackupManager';
-
-const EMOJI_OPTIONS = ['🌸', '✨', '🌿', '🍯', '🧸', '🍓', '🎀', '☕', '🐱', '🌙'];
+import { BUBU_AVATARS, BubuAvatar } from '../components/BubuAvatar';
 
 export const StatsPage: React.FC = () => {
   const { user, updateProfile } = useAuth();
@@ -55,8 +54,8 @@ export const StatsPage: React.FC = () => {
       {/* Top Banner */}
       <div className="bg-gradient-to-r from-pink-100/80 via-amber-100/70 to-rose-100/80 rounded-3xl p-6 sm:p-8 border border-pink-200 shadow-soft text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-3xl bg-white shadow-soft flex items-center justify-center text-4xl">
-            {user?.avatarEmoji || '🌸'}
+          <div className="w-20 h-20 rounded-3xl bg-white shadow-soft flex items-center justify-center p-2 border border-pink-100">
+            <BubuAvatar avatar={user?.avatarEmoji} size="xl" />
           </div>
           <div>
             <span className="text-xs font-black uppercase tracking-widest text-rose-600 bg-white/80 px-3 py-1 rounded-full border border-pink-200">
@@ -180,24 +179,25 @@ export const StatsPage: React.FC = () => {
             />
           </div>
 
-          {/* Avatar Emoji */}
+          {/* Avatar Mascot */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-bold text-glow-muted uppercase tracking-wider">
-              Choose your Mascot Emoji
+              Choose your Bubu & Dudu Mascot Avatar
             </label>
             <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              {EMOJI_OPTIONS.map((emoji) => (
+              {BUBU_AVATARS.map((av) => (
                 <button
-                  key={emoji}
+                  key={av.id}
                   type="button"
-                  onClick={() => setAvatarEmoji(emoji)}
-                  className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xl transition bouncy-button border ${
-                    avatarEmoji === emoji
-                      ? 'border-pink-400 bg-pink-100 scale-110 shadow-cute'
-                      : 'border-transparent bg-pink-50/40 hover:bg-pink-100/50'
+                  onClick={() => setAvatarEmoji(av.id)}
+                  className={`w-12 h-12 rounded-2xl p-1.5 flex items-center justify-center transition bouncy-button border shrink-0 ${
+                    avatarEmoji === av.id
+                      ? 'border-rose-400 bg-rose-50 scale-110 shadow-cute ring-2 ring-rose-200'
+                      : 'border-pink-100 bg-white/80 hover:bg-white'
                   }`}
+                  title={av.label}
                 >
-                  {emoji}
+                  <img src={av.src} alt={av.label} className="w-full h-full object-contain" />
                 </button>
               ))}
             </div>

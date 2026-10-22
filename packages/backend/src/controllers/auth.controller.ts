@@ -45,7 +45,7 @@ export async function register(req: Request, res: Response): Promise<void> {
         username: trimmedUsername,
         passwordHash,
         name: name.trim(),
-        avatarEmoji: avatarEmoji || '🌸',
+        avatarEmoji: avatarEmoji || 'bubu-peace',
       },
     });
 

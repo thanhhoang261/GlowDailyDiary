@@ -36,9 +36,13 @@ const MainApp: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="text-4xl animate-bounce">🌸</div>
+          <img
+            src="/bubu-dudu/mood-joyful.gif"
+            alt="Bubu & Dudu"
+            className="w-20 h-20 object-contain drop-shadow-sm animate-floatCute"
+          />
           <p className="font-bold text-glow-muted text-sm">
-            Opening your daily glow...
+            Opening your Bubu & Dudu sanctuary...
           </p>
         </div>
       </div>

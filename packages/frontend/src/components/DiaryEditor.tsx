@@ -284,10 +284,14 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
       </div>
 
       {isLoading ? (
-        <div className="bg-white/80 rounded-3xl p-12 text-center border border-pink-100 shadow-soft">
-          <div className="text-3xl animate-bounce mb-2">🌸</div>
+        <div className="bg-white/80 rounded-3xl p-12 text-center border border-pink-100 shadow-soft flex flex-col items-center justify-center">
+          <img
+            src="/bubu-dudu/mood-reflective.gif"
+            alt="Bubu & Dudu Thinking"
+            className="w-20 h-20 object-contain mb-3 drop-shadow-xs"
+          />
           <p className="font-bold text-glow-muted text-sm">
-            Fetching your thoughts and memories...
+            Bubu & Dudu are fetching your memories...
           </p>
         </div>
       ) : (
@@ -462,9 +466,13 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
           <div className="bg-white/95 p-5 rounded-3xl border border-pink-100 shadow-soft flex flex-wrap items-center justify-between gap-4 mt-2">
             <div className="flex items-center gap-2">
               {saveSuccess && (
-                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-3.5 py-1.5 rounded-full border border-emerald-200 animate-bounce">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <span>Entry & voice saved beautifully! 🌸</span>
+                <div className="flex items-center gap-2.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-4 py-2 rounded-2xl border border-emerald-200 shadow-2xs animate-floatCute">
+                  <img
+                    src="/bubu-dudu/bubu-dudu-snuggle.gif"
+                    alt="Bubu & Dudu Cheering"
+                    className="w-7 h-7 object-contain"
+                  />
+                  <span>Bubu & Dudu celebrate: Story saved beautifully! 💖</span>
                 </div>
               )}
             </div>
