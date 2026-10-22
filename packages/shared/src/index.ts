@@ -231,6 +231,7 @@ export interface RegisterDto {
 export interface UserBackupStatus {
   googleDriveConnected: boolean;
   googleDriveEmail?: string | null;
+  googleDriveFolderId?: string | null;
   autoBackupEnabled: boolean;
   lastBackupAt?: string | null;
   isOAuthAppConfigured: boolean;

@@ -344,11 +344,11 @@ export async function backupUserToPersonalDrive(userId: string): Promise<{
     } catch (err: any) {
       console.error(`Google Drive upload error for user ${user.username}:`, err.message);
       return {
-        success: true,
+        success: false,
         filename,
         size,
         googleDriveUploaded: false,
-        message: `Local archive created, but Drive upload failed: ${err.message}`,
+        message: `Local archive created, but Google Drive upload failed: ${err.message}`,
       };
     }
   }
@@ -393,6 +393,7 @@ export async function getUserBackupStatus(userId: string) {
     select: {
       googleDriveConnected: true,
       googleDriveEmail: true,
+      googleDriveFolderId: true,
       autoBackupEnabled: true,
       lastBackupAt: true,
     },
@@ -420,6 +421,7 @@ export async function getUserBackupStatus(userId: string) {
   return {
     googleDriveConnected: user?.googleDriveConnected || false,
     googleDriveEmail: user?.googleDriveEmail || null,
+    googleDriveFolderId: user?.googleDriveFolderId || null,
     autoBackupEnabled: user?.autoBackupEnabled ?? true,
     lastBackupAt: user?.lastBackupAt ? user.lastBackupAt.toISOString() : null,
     isOAuthAppConfigured: isOAuthAppConfigured(),

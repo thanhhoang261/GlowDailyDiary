@@ -122,11 +122,19 @@ export const BackupManager: React.FC = () => {
     setBackupMsg(null);
     try {
       const res = await api.triggerBackupNow();
-      setBackupMsg({
-        text: res.message || 'Personal backup completed successfully!',
-      });
+      if (res.googleDriveUploaded === false) {
+        setBackupMsg({
+          text: res.message || 'Local archive created, but Google Drive upload failed. Please verify Google Drive API is enabled in Google Cloud Console.',
+          isError: true,
+        });
+      } else {
+        setBackupMsg({
+          text: res.message || 'Personal backup completed successfully and uploaded to Google Drive! ☁️✨',
+          isError: false,
+        });
+        setTimeout(() => setBackupMsg(null), 6000);
+      }
       await fetchStatus();
-      setTimeout(() => setBackupMsg(null), 5000);
     } catch (err: any) {
       setBackupMsg({
         text: err.message || 'Failed to complete personal backup',
@@ -207,7 +215,19 @@ export const BackupManager: React.FC = () => {
                 {status.googleDriveEmail}
               </p>
               <p className="text-[11px] text-emerald-700/90 mt-0.5">
-                Backups save directly into your folder: <strong>Daily Glow Diary Backups 🌸</strong>
+                Backups save directly into your folder:{' '}
+                {status.googleDriveFolderId ? (
+                  <a
+                    href={`https://drive.google.com/drive/folders/${status.googleDriveFolderId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-bold underline hover:text-emerald-950 inline-flex items-center gap-0.5"
+                  >
+                    Daily Glow Diary Backups 🌸 ↗
+                  </a>
+                ) : (
+                  <strong>Daily Glow Diary Backups 🌸</strong>
+                )}
               </p>
             </div>
           </div>
@@ -309,18 +329,29 @@ export const BackupManager: React.FC = () => {
       {/* Feedback Alert */}
       {backupMsg && (
         <div
-          className={`p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 ${
+          className={`p-3.5 rounded-2xl text-xs font-bold flex items-center justify-between gap-2 transition-all ${
             backupMsg.isError
-              ? 'bg-rose-50 border border-rose-200 text-rose-600'
-              : 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+              ? 'bg-rose-50 border border-rose-200 text-rose-700'
+              : 'bg-emerald-50 border border-emerald-200 text-emerald-800'
           }`}
         >
-          {backupMsg.isError ? (
-            <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
-          ) : (
-            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+          <div className="flex items-center gap-2">
+            {backupMsg.isError ? (
+              <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+            )}
+            <span>{backupMsg.text}</span>
+          </div>
+          {backupMsg.isError && (
+            <button
+              type="button"
+              onClick={() => setBackupMsg(null)}
+              className="text-rose-500 hover:text-rose-800 text-[11px] font-extrabold px-1.5 py-0.5 rounded"
+            >
+              ✕
+            </button>
           )}
-          <span>{backupMsg.text}</span>
         </div>
       )}
 
