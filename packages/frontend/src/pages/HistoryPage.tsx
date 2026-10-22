@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Mic, BookOpen, Calendar, Heart, ArrowRight } from 'lucide-react';
+import { Search, Mic, Calendar, Heart, ArrowRight } from 'lucide-react';
 import { DiaryEntry, MOODS, MoodType } from '@diary/shared';
 import { api } from '../services/api';
 
@@ -160,27 +160,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ onSelectDate }) => {
                   </div>
                 )}
 
-                {/* Vocab pills preview */}
-                {entry.vocabList && entry.vocabList.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                    <span className="text-[11px] font-bold text-purple-700 mr-1 flex items-center gap-1">
-                      <BookOpen className="w-3 h-3" /> Vocab:
-                    </span>
-                    {entry.vocabList.slice(0, 4).map((v, idx) => (
-                      <span
-                        key={idx}
-                        className="text-[11px] px-2 py-0.5 rounded-xl bg-purple-50 text-purple-800 border border-purple-100"
-                      >
-                        {v.word}
-                      </span>
-                    ))}
-                    {entry.vocabList.length > 4 && (
-                      <span className="text-[10px] text-purple-500 font-bold">
-                        +{entry.vocabList.length - 4} more
-                      </span>
-                    )}
-                  </div>
-                )}
+
 
                 {/* Card footer */}
                 <div className="flex items-center justify-between pt-2 border-t border-pink-100/60 text-xs">

@@ -4,7 +4,6 @@ import {
   Calendar,
   Save,
   Trash2,
-  BookOpen,
   Plus,
   X,
   Sparkles,
@@ -13,7 +12,7 @@ import {
   Heart,
   CloudSun,
 } from 'lucide-react';
-import { MoodType, VocabItem, DiaryEntry } from '@diary/shared';
+import { MoodType, DiaryEntry } from '@diary/shared';
 import { api } from '../services/api';
 import { MoodPicker } from './MoodPicker';
 import { EnglishPromptBanner } from './EnglishPromptBanner';
@@ -53,10 +52,7 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
   const [weather, setWeather] = useState<string>('sunny');
   const [promptQuestion, setPromptQuestion] = useState<string | null>(null);
 
-  // Vocabulary & Gratitude lists
-  const [vocabList, setVocabList] = useState<VocabItem[]>([]);
-  const [newWord, setNewWord] = useState('');
-  const [newMeaning, setNewMeaning] = useState('');
+  // Gratitude list
   const [gratitudeList, setGratitudeList] = useState<string[]>([]);
   const [newGratitude, setNewGratitude] = useState('');
 
@@ -94,7 +90,6 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
         setContent(res.entry.content || '');
         setMood(res.entry.mood || 'joyful');
         setWeather(res.entry.weather || 'sunny');
-        setVocabList(res.entry.vocabList || []);
         setGratitudeList(res.entry.gratitude || []);
         setAudioUrl(res.entry.audioUrl || null);
         setAudioDuration(res.entry.audioDuration || null);
@@ -106,7 +101,6 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
         setContent('');
         setMood('joyful');
         setWeather('sunny');
-        setVocabList([]);
         setGratitudeList([]);
         setAudioUrl(null);
         setAudioDuration(null);
@@ -146,20 +140,6 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
     }
   };
 
-  const handleAddVocab = () => {
-    if (!newWord.trim()) return;
-    setVocabList((prev) => [
-      ...prev,
-      { word: newWord.trim(), meaning: newMeaning.trim() },
-    ]);
-    setNewWord('');
-    setNewMeaning('');
-  };
-
-  const handleRemoveVocab = (index: number) => {
-    setVocabList((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const handleAddGratitude = () => {
     if (!newGratitude.trim()) return;
     setGratitudeList((prev) => [...prev, newGratitude.trim()]);
@@ -183,7 +163,7 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
         content,
         mood,
         weather,
-        vocabList,
+        vocabList: [],
         gratitude: gratitudeList,
         promptQuestion,
       });
@@ -231,7 +211,6 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
         setHasExistingEntry(false);
         setTitle('');
         setContent('');
-        setVocabList([]);
         setGratitudeList([]);
         setAudioUrl(null);
         if (onEntryDeleted) {
@@ -410,153 +389,72 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
             isSaving={isSaving}
           />
 
-          {/* Two-Column Extras: Vocabulary Corner & Gratitude Notes */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Vocabulary Corner */}
-            <div className="bg-white/95 rounded-3xl p-5 border border-pink-100 shadow-soft flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <span className="p-2 bg-purple-100 text-purple-600 rounded-2xl">
-                  <BookOpen className="w-4 h-4" />
-                </span>
-                <div>
-                  <h4 className="font-bold text-glow-cocoa text-sm">
-                    Today's English Vocabulary 📚
-                  </h4>
-                  <p className="text-[11px] text-glow-muted">
-                    New words, idioms, or cool phrases you practiced!
-                  </p>
-                </div>
-              </div>
-
-              {/* Add word inputs */}
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  type="text"
-                  placeholder="Word or phrase"
-                  value={newWord}
-                  onChange={(e) => setNewWord(e.target.value)}
-                  className="flex-1 text-xs px-3 py-2 rounded-xl bg-purple-50/40 border border-purple-100 focus:outline-none focus:border-purple-300"
-                />
-                <input
-                  type="text"
-                  placeholder="Meaning or note"
-                  value={newMeaning}
-                  onChange={(e) => setNewMeaning(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddVocab();
-                    }
-                  }}
-                  className="flex-1 text-xs px-3 py-2 rounded-xl bg-purple-50/40 border border-purple-100 focus:outline-none focus:border-purple-300"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddVocab}
-                  className="p-2 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition bouncy-button"
-                  title="Add Word"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* List of Vocab Items */}
-              <div className="flex flex-wrap gap-2 mt-1">
-                {vocabList.map((item, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-purple-50 text-purple-900 border border-purple-100 text-xs shadow-2xs"
-                  >
-                    <span className="font-extrabold">{item.word}</span>
-                    {item.meaning && (
-                      <span className="text-purple-600 text-[11px]">
-                        : {item.meaning}
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveVocab(i)}
-                      className="ml-1 text-purple-400 hover:text-purple-700"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-                {vocabList.length === 0 && (
-                  <p className="text-xs text-glow-muted italic">
-                    No words saved yet today. Add one above!
-                  </p>
-                )}
+          {/* Gratitude Notes */}
+          <div className="bg-white/95 rounded-3xl p-5 border border-pink-100 shadow-soft flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <span className="p-2 bg-rose-100 text-rose-600 rounded-2xl">
+                <Heart className="w-4 h-4 fill-rose-500" />
+              </span>
+              <div>
+                <h4 className="font-bold text-glow-cocoa text-sm">
+                  3 Things I'm Grateful For 💖
+                </h4>
+                <p className="text-[11px] text-glow-muted">
+                  Little moments of warmth and happiness
+                </p>
               </div>
             </div>
 
-            {/* Gratitude Notes */}
-            <div className="bg-white/95 rounded-3xl p-5 border border-pink-100 shadow-soft flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <span className="p-2 bg-rose-100 text-rose-600 rounded-2xl">
-                  <Heart className="w-4 h-4 fill-rose-500" />
-                </span>
-                <div>
-                  <h4 className="font-bold text-glow-cocoa text-sm">
-                    3 Things I'm Grateful For 💖
-                  </h4>
-                  <p className="text-[11px] text-glow-muted">
-                    Little moments of warmth and happiness
-                  </p>
-                </div>
-              </div>
+            {/* Add gratitude input */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="e.g. My mom's warm smile, sunny weather..."
+                value={newGratitude}
+                onChange={(e) => setNewGratitude(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddGratitude();
+                  }
+                }}
+                className="flex-1 text-xs px-3 py-2 rounded-xl bg-rose-50/40 border border-rose-100 focus:outline-none focus:border-rose-300"
+              />
+              <button
+                type="button"
+                onClick={handleAddGratitude}
+                className="p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl transition bouncy-button"
+                title="Add Gratitude"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
 
-              {/* Add gratitude input */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="e.g. My mom's warm smile, sunny weather..."
-                  value={newGratitude}
-                  onChange={(e) => setNewGratitude(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddGratitude();
-                    }
-                  }}
-                  className="flex-1 text-xs px-3 py-2 rounded-xl bg-rose-50/40 border border-rose-100 focus:outline-none focus:border-rose-300"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddGratitude}
-                  className="p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl transition bouncy-button"
-                  title="Add Gratitude"
+            {/* Gratitude list */}
+            <div className="flex flex-col gap-1.5 mt-1">
+              {gratitudeList.map((item, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-2xl bg-rose-50/70 border border-rose-100/70 text-xs text-rose-900 shadow-2xs"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* Gratitude list */}
-              <div className="flex flex-col gap-1.5 mt-1">
-                {gratitudeList.map((item, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-2xl bg-rose-50/70 border border-rose-100/70 text-xs text-rose-900 shadow-2xs"
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3 text-rose-400" />
+                    {item}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveGratitude(i)}
+                    className="text-rose-400 hover:text-rose-700"
                   >
-                    <span className="flex items-center gap-1.5">
-                      <Sparkles className="w-3 h-3 text-rose-400" />
-                      {item}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveGratitude(i)}
-                      className="text-rose-400 hover:text-rose-700"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-                {gratitudeList.length === 0 && (
-                  <p className="text-xs text-glow-muted italic">
-                    Count your small blessings for today!
-                  </p>
-                )}
-              </div>
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+              {gratitudeList.length === 0 && (
+                <p className="text-xs text-glow-muted italic">
+                  Count your small blessings for today!
+                </p>
+              )}
             </div>
           </div>
 
