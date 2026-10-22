@@ -1,0 +1,32 @@
+services:
+  diary:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: diary-app
+    restart: unless-stopped
+    ports:
+      - "${PORT:-4000}:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - DATABASE_URL=file:/app/packages/backend/prisma/dev.db
+      - JWT_SECRET=${JWT_SECRET:-glow_diary_super_cute_and_secret_key_2026_daily_joy}
+      - CLIENT_URL=${CLIENT_URL:-http://localhost:4000}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:4000/api/backup/google/callback}
+      - BACKUP_ENABLED=true
+      - BACKUP_CRON=${BACKUP_CRON:-0 2 * * *}
+    volumes:
+      - diary_data:/app/packages/backend/prisma
+      - diary_uploads:/app/packages/backend/uploads
+      - diary_backups:/app/packages/backend/backups
+
+volumes:
+  diary_data:
+    name: diary_db_data
+  diary_uploads:
+    name: diary_uploads_data
+  diary_backups:
+    name: diary_backups_data

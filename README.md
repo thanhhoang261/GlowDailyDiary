@@ -108,7 +108,45 @@ To enable the Google Sign-in button for all users:
 
 ---
 
-## 🛠️ Helpful Commands
+---
+
+## 🐳 Fast Deployment with Docker & Justfile (Dành cho Server riêng / VPS)
+
+Ứng dụng đã được đóng gói thành **1 Docker container duy nhất** phục vụ cả Frontend, Backend API và SQLite DB trên cổng `4000`, kèm các Volume lưu trữ bền vững không bao giờ bị mất dữ liệu khi cập nhật!
+
+### 1. Khởi chạy lần đầu trên Server:
+```bash
+git clone git@github.com:thanhhoang261/diary.git
+cd diary
+just up
+```
+*Ghé thăm web tại `http://your-server-ip:4000`!*
+
+### 2. Cập nhật code mới nhanh nhất (Fastest Update):
+Chỉ cần chạy 1 lệnh duy nhất trên server:
+```bash
+just update
+```
+Lệnh này sẽ tự động:
+1. `git pull` bản code mới nhất từ GitHub.
+2. Build lại image Docker bằng layer cache siêu tốc.
+3. Khởi động lại container (chỉ mất ~5-10s) và giữ nguyên toàn bộ cơ sở dữ liệu SQLite & các file ghi âm voice note.
+4. Tự động dọn dẹp các cache thừa.
+
+### 3. Các lệnh Justfile tiện ích:
+| Lệnh | Ý nghĩa |
+| :--- | :--- |
+| `just up` | Build và khởi chạy container chạy ngầm |
+| `just down` | Dừng và hạ container |
+| `just update` | **Cập nhật nhanh nhất**: Kéo git mới -> build -> restart container |
+| `just logs` | Xem live logs của web và các tác vụ sao lưu |
+| `just status` | Kiểm tra tình trạng hoạt động và mức ngốn RAM / CPU (chỉ ~120MB RAM!) |
+| `just backup` | Kích hoạt tạo snapshot sao lưu ngay lập tức trong container |
+| `just shell` | Truy cập terminal sh bên trong container |
+
+---
+
+## 🛠️ Helpful Commands (Local Dev)
 
 | Command | Description |
 | :--- | :--- |
