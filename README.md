@@ -27,6 +27,11 @@ A delightful, warm, and cute full-stack Monorepo web application designed for pe
 - 🔐 **Authentication & Privacy:**
   - Secure JWT authentication with bcrypt-hashed passwords.
   - Built-in demo credentials for immediate testing.
+- ☁️ **Automated Google Drive Backup & Data Safety:**
+  - In-process Cron scheduler (`node-cron`) automatically backs up SQLite database + voice note audio files every night at 02:00 AM.
+  - Generates portable `.zip` archives containing the complete database snapshot, audio files, and metadata.
+  - Direct integration with Google Drive API via Service Account or OAuth2.
+  - Instant "Backup Now" & "Download Backup (.zip)" button on the web interface.
 
 ---
 
@@ -72,6 +77,28 @@ pnpm dev
 You can either register your own account or click **"Fill Demo Account"** on the login page:
 - **Username:** `owner`
 - **Password:** `diary2026`
+
+---
+
+## ☁️ Google Drive Backup Setup Guide
+
+The application automatically creates local backup archives even without Google Cloud credentials. To stream backups straight into your Google Drive:
+
+1. **Create Google Cloud Project & Enable API:**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/) and create a project.
+   - Go to **APIs & Services** &rarr; **Library** &rarr; Search and enable **Google Drive API**.
+2. **Create a Service Account:**
+   - Go to **APIs & Services** &rarr; **Credentials** &rarr; **Create Credentials** &rarr; **Service Account**.
+   - Create and download a **JSON Key**.
+   - Save this file as `packages/backend/service-account.json` (this file is excluded by `.gitignore` for security).
+3. **Share Google Drive Folder:**
+   - On Google Drive, create a folder (e.g. `Diary Backups`).
+   - Click **Share** and add your Service Account email address with **Editor** permissions.
+   - Copy the Folder ID from the URL (the string after `folders/`) and put it into `packages/backend/.env`:
+     ```env
+     GOOGLE_DRIVE_FOLDER_ID="your_folder_id_here"
+     ```
+4. **Done!** The backend will automatically upload backup zips every night at 02:00 AM (configurable via `BACKUP_CRON` in `.env`), and you can click **"Backup Now"** anytime from the Milestones page!
 
 ---
 

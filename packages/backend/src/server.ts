@@ -6,6 +6,8 @@ import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.routes.js';
 import diaryRoutes from './routes/diary.routes.js';
 import audioRoutes from './routes/audio.routes.js';
+import backupRoutes from './routes/backup.routes.js';
+import { initBackupCron } from './services/backup.service.js';
 
 dotenv.config();
 
@@ -42,6 +44,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/diary', diaryRoutes);
 app.use('/api/audio', audioRoutes);
+app.use('/api/backup', backupRoutes);
 
 // Global Error Handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
@@ -53,4 +56,5 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 
 app.listen(PORT, () => {
   console.log(`✨ Glow Diary Server listening on http://localhost:${PORT}`);
+  initBackupCron();
 });

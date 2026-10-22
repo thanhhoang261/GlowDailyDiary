@@ -3,6 +3,7 @@ import { Flame, Sparkles, Trophy, Mic, BookOpen, Heart, User, Check } from 'luci
 import { StreakStats } from '@diary/shared';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { BackupManager } from '../components/BackupManager';
 
 const EMOJI_OPTIONS = ['🌸', '✨', '🌿', '🍯', '🧸', '🍓', '🎀', '☕', '🐱', '🌙'];
 
@@ -242,6 +243,9 @@ export const StatsPage: React.FC = () => {
           </div>
         </form>
       </div>
+
+      {/* Cloud & Local Backup Manager */}
+      <BackupManager />
     </div>
   );
 };

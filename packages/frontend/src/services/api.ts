@@ -133,4 +133,36 @@ export const api = {
     request<{ success: boolean }>(`/api/audio/${date}`, {
       method: 'DELETE',
     }),
+
+  // Backup & Cloud Sync
+  getBackupStatus: () =>
+    request<{
+      isGoogleDriveConfigured: boolean;
+      isCronEnabled: boolean;
+      cronSchedule: string;
+      lastBackup: any;
+      recentBackups: { filename: string; size: number; createdAt: string }[];
+    }>('/api/backup/status', { method: 'GET' }),
+
+  triggerBackupNow: () =>
+    request<{ success: boolean; message: string; backup: any }>('/api/backup/now', {
+      method: 'POST',
+    }),
+
+  downloadBackup: async () => {
+    const token = tokenStorage.get();
+    const res = await fetch('/api/backup/download', {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error('Failed to download backup');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `glow-diary-backup-${new Date().toISOString().slice(0, 10)}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
 };

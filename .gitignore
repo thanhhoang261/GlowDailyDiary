@@ -6,4 +6,7 @@ dist
 *.tsbuildinfo
 packages/backend/uploads/*
 !packages/backend/uploads/.gitkeep
+packages/backend/backups/*
+!packages/backend/backups/.gitkeep
+*service-account*.json
 .DS_Store
