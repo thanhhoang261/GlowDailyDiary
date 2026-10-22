@@ -8,6 +8,11 @@ cd /app/packages/backend
 # Ensure upload and backup directories exist
 mkdir -p uploads/audio backups prisma
 
+# Ensure schema.prisma in the volume is updated to the latest version from image
+if [ -f /app/schema.prisma ]; then
+  cp -f /app/schema.prisma prisma/schema.prisma
+fi
+
 # Apply schema migrations to SQLite
 echo "📦 Syncing SQLite database schema..."
 npx prisma db push --skip-generate

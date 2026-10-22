@@ -34,6 +34,7 @@ update:
     docker compose build
     @echo "🚀 Restarting container with zero data loss..."
     docker compose up -d
+    @docker compose exec -T diary sh -c "cd /app/packages/backend && npx prisma db push --skip-generate" >/dev/null 2>&1 || true
     @echo "🧹 Cleaning dangling build caches..."
     docker image prune -f
     @echo "✅ Updated successfully! Checking container status:"

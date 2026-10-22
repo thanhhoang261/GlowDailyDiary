@@ -9,6 +9,7 @@ import diaryRoutes from './routes/diary.routes.js';
 import audioRoutes from './routes/audio.routes.js';
 import backupRoutes from './routes/backup.routes.js';
 import { initBackupCron } from './services/backup.service.js';
+import { ensureDatabaseSchema } from './prisma.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -69,7 +70,12 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`✨ Glow Diary Server listening on http://localhost:${PORT}`);
+  try {
+    await ensureDatabaseSchema();
+  } catch (err: any) {
+    console.error('Error ensuring database schema:', err.message);
+  }
   initBackupCron();
 });

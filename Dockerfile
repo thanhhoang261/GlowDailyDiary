@@ -55,6 +55,7 @@ COPY --from=builder /app/packages/frontend/node_modules ./packages/frontend/node
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/packages/backend/dist ./packages/backend/dist
 COPY --from=builder /app/packages/backend/prisma ./packages/backend/prisma
+COPY --from=builder /app/packages/backend/prisma/schema.prisma /app/schema.prisma
 COPY --from=builder /app/packages/frontend/dist ./packages/frontend/dist
 
 # Copy entrypoint script
