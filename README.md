@@ -67,8 +67,7 @@ pnpm install
 pnpm dev
 ```
 
-- **Frontend:** [http://localhost:5173](http://localhost:5173)
-- **Backend API:** [http://localhost:4000](http://localhost:4000)
+- **Web Application:** [http://localhost:5173](http://localhost:5173)
 
 ---
 
@@ -96,23 +95,21 @@ To enable the Google Sign-in button for all users:
 2. Create an **OAuth 2.0 Client ID** (Application type: *Web application*).
 3. Add **Authorized redirect URI**:
    ```
-   http://localhost:4000/api/backup/google/callback
+   http://localhost:5173/api/backup/google/callback
    ```
 4. Set the credentials in `packages/backend/.env`:
    ```env
    GOOGLE_CLIENT_ID="your_client_id.apps.googleusercontent.com"
    GOOGLE_CLIENT_SECRET="your_client_secret"
-   GOOGLE_REDIRECT_URI="http://localhost:4000/api/backup/google/callback"
+   GOOGLE_REDIRECT_URI="http://localhost:5173/api/backup/google/callback"
    ```
 *(Even without Google OAuth credentials configured, every user can still export and download their personal `.zip` archive anytime via the "Download My Data (.zip)" button).*
 
 ---
 
----
-
 ## 🐳 Fast Deployment with Docker & Justfile (Dành cho Server riêng / VPS)
 
-Ứng dụng đã được đóng gói thành **1 Docker container duy nhất** phục vụ cả Frontend, Backend API và SQLite DB trên cổng `4000`, kèm các Volume lưu trữ bền vững không bao giờ bị mất dữ liệu khi cập nhật!
+Ứng dụng đã được đóng gói thành **1 Docker container duy nhất** phục vụ cả Frontend, Backend API và SQLite DB trên cổng `5173`, kèm các Volume lưu trữ bền vững không bao giờ bị mất dữ liệu khi cập nhật!
 
 ### 1. Khởi chạy lần đầu trên Server:
 ```bash
@@ -120,7 +117,7 @@ git clone git@github.com:thanhhoang261/diary.git
 cd diary
 just up
 ```
-*Ghé thăm web tại `http://your-server-ip:4000`!*
+*Ghé thăm web tại `http://your-server-ip:5173`!*
 
 ### 2. Cập nhật code mới nhanh nhất (Fastest Update):
 Chỉ cần chạy 1 lệnh duy nhất trên server:

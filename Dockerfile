@@ -39,7 +39,7 @@ RUN apk add --no-cache openssl ca-certificates tzdata
 RUN corepack enable && corepack prepare pnpm@11.13.0 --activate
 
 ENV NODE_ENV=production
-ENV PORT=4000
+ENV PORT=5173
 
 # Copy workspace package manifests & node_modules directly from builder
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
@@ -64,6 +64,6 @@ RUN chmod +x /app/docker-entrypoint.sh
 # Persistent volumes for SQLite DB, voice notes, and backup archives
 VOLUME ["/app/packages/backend/prisma", "/app/packages/backend/uploads", "/app/packages/backend/backups"]
 
-EXPOSE 4000
+EXPOSE 5173
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

@@ -9,7 +9,7 @@ default:
 # 🚀 Khởi chạy toàn bộ hệ thống bằng Docker Compose (Build & Run ngầm)
 up:
     docker compose up -d --build
-    @echo "✨ Glow Diary is up at http://localhost:4000"
+    @echo "✨ Glow Diary is up at http://localhost:5173"
 
 # 🛑 Dừng container
 down:

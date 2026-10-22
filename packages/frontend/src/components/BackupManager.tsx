@@ -343,7 +343,7 @@ export const BackupManager: React.FC = () => {
             <li>
               Tại mục <strong>Authorized redirect URIs</strong>, thêm đường dẫn sau:
               <code className="block bg-white px-2 py-1 my-1 rounded border border-slate-300 font-mono text-rose-600">
-                http://localhost:4000/api/backup/google/callback
+                http://localhost:5173/api/backup/google/callback
               </code>
             </li>
             <li>
@@ -351,7 +351,7 @@ export const BackupManager: React.FC = () => {
               <pre className="bg-stone-900 text-stone-100 p-2.5 rounded-xl font-mono text-[11px] overflow-x-auto mt-1">
 {`GOOGLE_CLIENT_ID="your_client_id.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="GOCSPX-your_client_secret"
-GOOGLE_REDIRECT_URI="http://localhost:4000/api/backup/google/callback"`}
+GOOGLE_REDIRECT_URI="http://localhost:5173/api/backup/google/callback"`}
               </pre>
             </li>
           </ol>
