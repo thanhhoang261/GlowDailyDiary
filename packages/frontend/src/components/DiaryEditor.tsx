@@ -246,10 +246,10 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
   const todayStr = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl mx-auto">
+    <div className="flex flex-col gap-6 max-w-5xl w-full mx-auto pb-12">
       {/* Top Date Toolbar */}
-      <div className="bg-white/90 rounded-3xl p-4 sm:p-5 border border-pink-100 shadow-soft flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
+      <div className="bg-white/95 rounded-3xl p-4 sm:p-5 border border-pink-100 shadow-soft flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span className="p-2.5 bg-rose-100/70 text-rose-600 rounded-2xl">
             <Calendar className="w-5 h-5" />
           </span>
@@ -268,7 +268,7 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
           </div>
         </div>
 
-        {/* Quick jump */}
+        {/* Quick actions & Save */}
         <div className="flex items-center gap-2">
           {date !== todayStr && (
             <button
@@ -291,6 +291,16 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
               <Trash2 className="w-4 h-4" />
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 hover:from-pink-600 hover:to-amber-600 text-white font-bold text-xs rounded-2xl shadow-cute bouncy-button disabled:opacity-60 cursor-pointer"
+          >
+            <Save className="w-3.5 h-3.5" />
+            <span>{isSaving ? 'Saving...' : 'Save Day ✨'}</span>
+          </button>
         </div>
       </div>
 
@@ -311,30 +321,30 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
           />
 
           {/* Mood & Weather Selection */}
-          <div className="bg-white/95 rounded-3xl p-5 border border-pink-100 shadow-soft flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-            <div className="w-full sm:w-auto">
-              <MoodPicker selectedMood={mood} onChange={setMood} />
-            </div>
+          <div className="bg-white/95 rounded-3xl p-5 sm:p-6 border border-pink-100 shadow-soft flex flex-col gap-4">
+            {/* Mood section */}
+            <MoodPicker selectedMood={mood} onChange={setMood} />
 
-            <div className="flex flex-col gap-2 w-full sm:w-auto">
-              <label className="text-xs font-bold uppercase tracking-wider text-glow-muted flex items-center gap-1">
-                <CloudSun className="w-3.5 h-3.5 text-amber-500" />
-                Weather
+            {/* Weather section */}
+            <div className="border-t border-pink-100/70 pt-3 flex flex-col gap-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-glow-muted flex items-center gap-1.5">
+                <CloudSun className="w-4 h-4 text-amber-500" />
+                <span>Weather today</span>
               </label>
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+              <div className="flex flex-wrap items-center gap-2 pt-1">
                 {WEATHERS.map((w) => (
                   <button
                     key={w.id}
                     type="button"
                     onClick={() => setWeather(w.id)}
-                    className={`px-2.5 py-1.5 rounded-2xl text-xs font-bold transition flex items-center gap-1 border bouncy-button ${
+                    className={`px-3 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 border bouncy-button ${
                       weather === w.id
-                        ? 'border-amber-300 bg-amber-50 text-amber-900 shadow-2xs'
-                        : 'border-transparent bg-pink-50/40 hover:bg-pink-50 text-glow-muted'
+                        ? 'border-amber-300 bg-amber-50 text-amber-900 shadow-2xs ring-2 ring-amber-200'
+                        : 'border-pink-100/70 bg-pink-50/30 hover:bg-white text-glow-cocoa'
                     }`}
                   >
-                    <span>{w.emoji}</span>
-                    <span className="hidden md:inline">{w.label}</span>
+                    <span className="text-sm">{w.emoji}</span>
+                    <span>{w.label}</span>
                   </button>
                 ))}
               </div>
@@ -551,10 +561,10 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
           </div>
 
           {/* Bottom Save Action Bar */}
-          <div className="sticky bottom-4 z-30 bg-white/95 backdrop-blur-md p-4 rounded-3xl border border-pink-200/90 shadow-cute flex items-center justify-between gap-4">
+          <div className="bg-white/95 p-5 rounded-3xl border border-pink-100 shadow-soft flex flex-wrap items-center justify-between gap-4 mt-2">
             <div className="flex items-center gap-2">
               {saveSuccess && (
-                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 animate-bounce">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-3.5 py-1.5 rounded-full border border-emerald-200 animate-bounce">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                   <span>Entry & voice saved beautifully! 🌸</span>
                 </div>
@@ -564,7 +574,7 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
             <button
               type="submit"
               disabled={isSaving}
-              className="flex items-center gap-2 px-7 py-3 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 hover:from-pink-600 hover:to-amber-600 text-white font-extrabold text-sm shadow-cute bouncy-button disabled:opacity-60 cursor-pointer"
+              className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 hover:from-pink-600 hover:to-amber-600 text-white font-extrabold text-sm shadow-cute bouncy-button disabled:opacity-60 cursor-pointer"
             >
               <Save className="w-4 h-4" />
               <span>{isSaving ? 'Saving Memory...' : 'Save My Day ✨'}</span>

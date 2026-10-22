@@ -92,7 +92,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const weekDayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl mx-auto">
+    <div className="flex flex-col gap-6 max-w-5xl w-full mx-auto pb-12">
       {/* Streak Hero Card */}
       {streakStats && (
         <div className="bg-gradient-to-r from-amber-100/70 via-rose-100/70 to-pink-100/70 rounded-3xl p-5 sm:p-6 border border-pink-200/70 shadow-cute flex flex-col sm:flex-row items-center justify-between gap-4">

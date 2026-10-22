@@ -10,11 +10,11 @@ export const MoodPicker: React.FC<MoodPickerProps> = ({ selectedMood, onChange }
   const moodList = Object.values(MOODS);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 w-full">
       <label className="text-xs font-bold uppercase tracking-wider text-glow-muted">
         How is your heart feeling today? 💭
       </label>
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 no-scrollbar">
+      <div className="flex flex-wrap items-center gap-2 pt-1">
         {moodList.map((m) => {
           const isSelected = selectedMood === m.type;
           return (
@@ -22,10 +22,10 @@ export const MoodPicker: React.FC<MoodPickerProps> = ({ selectedMood, onChange }
               key={m.type}
               type="button"
               onClick={() => onChange(m.type)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all bouncy-button whitespace-nowrap border ${
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all bouncy-button border ${
                 isSelected
-                  ? 'border-pink-300 shadow-cute scale-105'
-                  : 'border-transparent bg-white/70 hover:bg-white text-glow-muted hover:text-glow-cocoa'
+                  ? 'border-pink-300 shadow-cute scale-105 ring-2 ring-pink-200'
+                  : 'border-pink-100/70 bg-pink-50/30 hover:bg-white text-glow-cocoa'
               }`}
               style={{
                 backgroundColor: isSelected ? m.bgSoft : undefined,

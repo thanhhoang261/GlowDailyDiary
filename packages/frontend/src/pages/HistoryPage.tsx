@@ -40,7 +40,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ onSelectDate }) => {
   }, [searchQuery]);
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl mx-auto">
+    <div className="flex flex-col gap-6 max-w-5xl w-full mx-auto pb-12">
       {/* Header & Search Bar */}
       <div className="bg-white/95 rounded-3xl p-5 sm:p-7 border border-pink-100 shadow-soft flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>

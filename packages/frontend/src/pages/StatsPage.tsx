@@ -51,7 +51,7 @@ export const StatsPage: React.FC = () => {
   const totalAudioMinutes = stats ? Math.round(stats.totalAudioSeconds / 60) : 0;
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl mx-auto">
+    <div className="flex flex-col gap-6 max-w-5xl w-full mx-auto pb-12">
       {/* Top Banner */}
       <div className="bg-gradient-to-r from-pink-100/80 via-amber-100/70 to-rose-100/80 rounded-3xl p-6 sm:p-8 border border-pink-200 shadow-soft text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-4">
