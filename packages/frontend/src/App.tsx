@@ -42,7 +42,7 @@ const MainApp: React.FC = () => {
             className="w-20 h-20 object-contain drop-shadow-sm animate-floatCute"
           />
           <p className="font-bold text-glow-muted text-sm">
-            Opening your Bubu & Dudu sanctuary...
+            Opening your daily glow...
           </p>
         </div>
       </div>

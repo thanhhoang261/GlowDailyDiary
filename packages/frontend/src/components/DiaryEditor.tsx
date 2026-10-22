@@ -291,7 +291,7 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
             className="w-20 h-20 object-contain mb-3 drop-shadow-xs"
           />
           <p className="font-bold text-glow-muted text-sm">
-            Bubu & Dudu are fetching your memories...
+            Fetching your thoughts and memories...
           </p>
         </div>
       ) : (
@@ -469,10 +469,10 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
                 <div className="flex items-center gap-2.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-4 py-2 rounded-2xl border border-emerald-200 shadow-2xs animate-floatCute">
                   <img
                     src="/bubu-dudu/bubu-dudu-snuggle.gif"
-                    alt="Bubu & Dudu Cheering"
+                    alt="Cheering Mascot"
                     className="w-7 h-7 object-contain"
                   />
-                  <span>Bubu & Dudu celebrate: Story saved beautifully! 💖</span>
+                  <span>Entry & voice saved beautifully! 🌸</span>
                 </div>
               )}
             </div>

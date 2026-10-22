@@ -14,17 +14,9 @@ export const MoodPicker: React.FC<MoodPickerProps> = ({ selectedMood, onChange }
 
   return (
     <div className="flex flex-col gap-2.5 w-full">
-      <div className="flex items-center justify-between">
-        <label className="text-xs font-bold uppercase tracking-wider text-glow-muted flex items-center gap-1.5">
-          <span>How is your heart feeling today?</span>
-          <span className="text-pink-400 font-normal">· Bubu & Dudu Moods</span>
-        </label>
-        {activeMoodMeta && (
-          <span className="text-[11px] font-bold text-rose-500 bg-rose-50/80 px-2 py-0.5 rounded-full border border-rose-100 hidden sm:inline-block">
-            {activeMoodMeta.bubuDuduAction}
-          </span>
-        )}
-      </div>
+      <label className="text-xs font-bold uppercase tracking-wider text-glow-muted">
+        How is your heart feeling today? 💭
+      </label>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 pt-1">
         {moodList.map((m) => {

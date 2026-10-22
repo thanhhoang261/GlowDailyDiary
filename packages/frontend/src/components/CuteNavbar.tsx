@@ -43,10 +43,10 @@ export const CuteNavbar: React.FC<CuteNavbarProps> = ({
           </div>
           <div>
             <h1 className="font-extrabold text-glow-cocoa text-lg leading-tight tracking-tight flex items-center gap-1.5">
-              Bubu & Dudu Glow <Heart className="w-3.5 h-3.5 fill-rose-400 text-rose-400 inline" />
+              Daily Glow <Heart className="w-3.5 h-3.5 fill-rose-400 text-rose-400 inline" />
             </h1>
             <p className="text-[11px] font-semibold text-glow-muted uppercase tracking-wider">
-              Daily English Diary & Voice
+              English Journal & Voice
             </p>
           </div>
         </div>

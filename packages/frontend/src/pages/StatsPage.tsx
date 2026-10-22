@@ -182,7 +182,7 @@ export const StatsPage: React.FC = () => {
           {/* Avatar Mascot */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-bold text-glow-muted uppercase tracking-wider">
-              Choose your Bubu & Dudu Mascot Avatar
+              Choose your Mascot Emoji
             </label>
             <div className="flex items-center gap-2 overflow-x-auto pb-1">
               {BUBU_AVATARS.map((av) => (

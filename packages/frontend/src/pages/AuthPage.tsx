@@ -69,12 +69,12 @@ export const AuthPage: React.FC = () => {
             />
           </div>
           <h1 className="text-2xl font-black text-glow-cocoa tracking-tight flex items-center gap-1.5">
-            Bubu & Dudu English Diary <Heart className="w-4 h-4 fill-rose-400 text-rose-400 inline" />
+            Daily Glow Diary <Heart className="w-4 h-4 fill-rose-400 text-rose-400 inline" />
           </h1>
           <p className="text-xs font-semibold text-glow-muted mt-1">
             {isRegister
-              ? 'Join Bubu & Dudu on your cozy English writing & speaking journey'
-              : "Welcome back! Bubu & Dudu are waiting for today's story"}
+              ? 'Begin your cozy English writing & speaking journey'
+              : 'Welcome back to your personal sanctuary'}
           </p>
         </div>
 
@@ -120,7 +120,7 @@ export const AuthPage: React.FC = () => {
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-glow-muted uppercase tracking-wider">
-                  Choose Bubu & Dudu Mascot
+                  Choose Avatar Emoji
                 </label>
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {BUBU_AVATARS.map((av) => (
