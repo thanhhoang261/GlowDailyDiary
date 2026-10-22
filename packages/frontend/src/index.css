@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Quicksand', 'Nunito', sans-serif;
+    background-color: #FFFDF9;
+    color: #4A3E3D;
+    background-image: 
+      radial-gradient(#FFE4E6 0.85px, transparent 0.85px), 
+      radial-gradient(#FEF3C7 0.85px, #FFFDF9 0.85px);
+    background-size: 34px 34px;
+    background-position: 0 0, 17px 17px;
+  }
+}
+
+/* Custom cute scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(254, 243, 199, 0.4);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #FBCFE8;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #F472B6;
+}
+
+/* Soft transition utility */
+.soft-card {
+  @apply bg-white/90 backdrop-blur-sm rounded-3xl border border-pink-100/80 shadow-soft transition-all duration-200;
+}
+
+.bouncy-button {
+  @apply transition-transform active:scale-95 duration-150;
+}

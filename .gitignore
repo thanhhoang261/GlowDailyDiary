@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+*.db
+*.db-journal
+*.tsbuildinfo
+packages/backend/uploads/*
+!packages/backend/uploads/.gitkeep
+.DS_Store

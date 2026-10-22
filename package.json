@@ -1,0 +1,19 @@
+{
+  "name": "daily-glow-diary",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Personal English diary with voice recording, streak tracking & cute pastel aesthetic",
+  "scripts": {
+    "predev": "pnpm --filter @diary/shared build",
+    "dev": "concurrently -n \"backend,frontend\" -c \"magenta,cyan\" \"pnpm --filter @diary/backend dev\" \"pnpm --filter @diary/frontend dev\"",
+    "build": "pnpm --filter @diary/shared build && pnpm --filter @diary/backend build && pnpm --filter @diary/frontend build",
+    "db:generate": "pnpm --filter @diary/backend db:generate",
+    "db:migrate": "pnpm --filter @diary/backend db:migrate",
+    "db:seed": "pnpm --filter @diary/backend db:seed",
+    "db:studio": "pnpm --filter @diary/backend db:studio"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.3"
+  }
+}
