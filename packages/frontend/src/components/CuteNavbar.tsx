@@ -1,10 +1,10 @@
 import React from 'react';
-import { PenLine, Calendar, BookOpen, BarChart3, LogOut, Flame, Heart } from 'lucide-react';
+import { PenLine, Calendar, BookOpen, BarChart3, LogOut, Flame, Heart, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { StreakStats } from '@diary/shared';
 import { BubuAvatar } from './BubuAvatar';
 
-export type NavTab = 'today' | 'calendar' | 'journey' | 'stats';
+export type NavTab = 'today' | 'calendar' | 'journey' | 'stats' | 'admin';
 
 interface CuteNavbarProps {
   activeTab: NavTab;
@@ -19,11 +19,14 @@ export const CuteNavbar: React.FC<CuteNavbarProps> = ({
 }) => {
   const { user, logout } = useAuth();
 
+  const isUserAdmin = user?.isAdmin || user?.username === 'owner';
+
   const navItems = [
     { id: 'today' as NavTab, label: "Today's Glow", icon: PenLine, emoji: '✍️' },
     { id: 'calendar' as NavTab, label: 'Calendar & Track', icon: Calendar, emoji: '📅' },
     { id: 'journey' as NavTab, label: 'My Journey', icon: BookOpen, emoji: '📖' },
     { id: 'stats' as NavTab, label: 'Milestones', icon: BarChart3, emoji: '✨' },
+    ...(isUserAdmin ? [{ id: 'admin' as NavTab, label: 'Admin Panel', icon: Shield, emoji: '⚡' }] : []),
   ];
 
   return (

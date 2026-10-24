@@ -26,6 +26,12 @@ export async function ensureDatabaseSchema(): Promise<void> {
       await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN "googleDriveFolderId" TEXT;');
       console.log('📦 [DB Auto-Migration] Added googleDriveFolderId to User');
     }
+
+    if (!userColNames.has('isAdmin')) {
+      await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN "isAdmin" BOOLEAN DEFAULT 0;');
+      console.log('📦 [DB Auto-Migration] Added isAdmin to User');
+      await prisma.$executeRawUnsafe('UPDATE "User" SET "isAdmin" = 1 WHERE "username" = \'owner\';');
+    }
   } catch (err: any) {
     console.error('Error verifying database schema:', err.message);
   }

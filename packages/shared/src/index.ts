@@ -127,6 +127,7 @@ export interface UserProfile {
   avatarEmoji?: string;
   targetDailyWords?: number;
   hasOpenaiKey?: boolean;
+  isAdmin?: boolean;
   createdAt: string;
 }
 
@@ -267,4 +268,111 @@ export interface UserBackupStatus {
   lastBackupAt?: string | null;
   isOAuthAppConfigured: boolean;
   recentBackups: { filename: string; size: number; createdAt: string }[];
+}
+
+// ==========================================
+// Admin Dashboard Interfaces & DTOs
+// ==========================================
+
+export interface AdminSystemOverview {
+  server: {
+    uptimeSeconds: number;
+    nodeVersion: string;
+    platform: string;
+    arch: string;
+    memory: {
+      heapUsedMB: number;
+      heapTotalMB: number;
+      rssMB: number;
+    };
+    port: number | string;
+    nodeEnv: string;
+  };
+  database: {
+    path: string;
+    sizeBytes: number;
+    totalUsers: number;
+    totalEntries: number;
+    totalWords: number;
+  };
+  storage: {
+    audioUploadsCount: number;
+    audioUploadsSizeBytes: number;
+    backupsCount: number;
+    backupsSizeBytes: number;
+  };
+  services: {
+    cronSchedule: string;
+    hasServerOpenAiKey: boolean;
+    hasGoogleOAuth: boolean;
+  };
+}
+
+export interface AdminUserItem {
+  id: string;
+  username: string;
+  name: string;
+  avatarEmoji: string;
+  targetDailyWords: number;
+  isAdmin: boolean;
+  entriesCount: number;
+  totalWords: number;
+  audioCount: number;
+  googleDriveConnected: boolean;
+  hasOpenaiKey: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminEntryItem {
+  id: string;
+  userId: string;
+  username: string;
+  userName: string;
+  userAvatar: string;
+  date: string;
+  title: string;
+  content: string;
+  mood: MoodType;
+  weather?: string;
+  wordCount: number;
+  audioUrl?: string | null;
+  audioDuration?: number | null;
+  hasAiReview: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminAudioFileItem {
+  filename: string;
+  sizeBytes: number;
+  createdAt: string;
+  url: string;
+  isLinked: boolean;
+  linkedEntryId?: string;
+  linkedUser?: string;
+  linkedDate?: string;
+}
+
+export interface AdminBackupFileItem {
+  filename: string;
+  sizeBytes: number;
+  createdAt: string;
+  type: 'zip' | 'sqlite' | 'other';
+}
+
+export interface CreateUserDto {
+  username: string;
+  password: string;
+  name: string;
+  avatarEmoji?: string;
+  targetDailyWords?: number;
+  isAdmin?: boolean;
+}
+
+export interface UpdateUserAdminDto {
+  name?: string;
+  avatarEmoji?: string;
+  targetDailyWords?: number;
+  isAdmin?: boolean;
 }

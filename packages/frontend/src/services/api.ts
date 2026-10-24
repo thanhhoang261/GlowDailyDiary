@@ -8,6 +8,13 @@ import {
   DaySummary,
   StreakStats,
   AiReviewResult,
+  AdminSystemOverview,
+  AdminUserItem,
+  AdminEntryItem,
+  AdminAudioFileItem,
+  AdminBackupFileItem,
+  CreateUserDto,
+  UpdateUserAdminDto,
 } from '@diary/shared';
 
 const TOKEN_KEY = 'glow_diary_token';
@@ -201,4 +208,120 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ apiKey }),
     }),
+
+  // ==========================================
+  // Admin Management API
+  // ==========================================
+  getAdminOverview: () =>
+    request<{ overview: AdminSystemOverview }>('/api/admin/overview', { method: 'GET' }),
+
+  vacuumDatabase: () =>
+    request<{ success: boolean; message: string; beforeSizeBytes: number; afterSizeBytes: number; freedBytes: number }>(
+      '/api/admin/maintenance/vacuum',
+      { method: 'POST' }
+    ),
+
+  cleanOrphanAudio: () =>
+    request<{ success: boolean; message: string; cleanedCount: number; cleanedBytes: number }>(
+      '/api/admin/maintenance/clean-audio',
+      { method: 'POST' }
+    ),
+
+  testOpenAiAdmin: () =>
+    request<{ success: boolean; latencyMs?: number; message: string }>(
+      '/api/admin/test-openai',
+      { method: 'POST' }
+    ),
+
+  getAdminUsers: () =>
+    request<{ users: AdminUserItem[] }>('/api/admin/users', { method: 'GET' }),
+
+  createAdminUser: (dto: CreateUserDto) =>
+    request<{ success: boolean; message: string; user: any }>('/api/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    }),
+
+  updateAdminUser: (id: string, dto: UpdateUserAdminDto) =>
+    request<{ success: boolean; message: string; user: any }>(`/api/admin/users/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(dto),
+    }),
+
+  resetUserPasswordAdmin: (id: string, newPassword: string) =>
+    request<{ success: boolean; message: string }>(`/api/admin/users/${id}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify({ newPassword }),
+    }),
+
+  deleteAdminUser: (id: string) =>
+    request<{ success: boolean; message: string }>(`/api/admin/users/${id}`, {
+      method: 'DELETE',
+    }),
+
+  getAdminEntries: (params?: { q?: string; mood?: string; userId?: string; page?: number; limit?: number }) => {
+    const sp = new URLSearchParams();
+    if (params?.q) sp.set('q', params.q);
+    if (params?.mood) sp.set('mood', params.mood);
+    if (params?.userId) sp.set('userId', params.userId);
+    if (params?.page) sp.set('page', String(params.page));
+    if (params?.limit) sp.set('limit', String(params.limit));
+    const qs = sp.toString() ? `?${sp.toString()}` : '';
+    return request<{ total: number; page: number; limit: number; entries: AdminEntryItem[] }>(
+      `/api/admin/entries${qs}`,
+      { method: 'GET' }
+    );
+  },
+
+  deleteAdminEntry: (id: string) =>
+    request<{ success: boolean; message: string }>(`/api/admin/entries/${id}`, {
+      method: 'DELETE',
+    }),
+
+  exportAllEntriesJson: async () => {
+    const token = tokenStorage.get();
+    const res = await fetch('/api/admin/entries/export', {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `glow-diary-all-entries-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  getAdminAudioFiles: () =>
+    request<{ files: AdminAudioFileItem[] }>('/api/admin/audio-files', { method: 'GET' }),
+
+  deleteAdminAudioFile: (filename: string) =>
+    request<{ success: boolean; message: string }>(`/api/admin/audio-files/${filename}`, {
+      method: 'DELETE',
+    }),
+
+  getAdminBackups: () =>
+    request<{ backups: AdminBackupFileItem[] }>('/api/admin/backups', { method: 'GET' }),
+
+  createAdminBackup: () =>
+    request<{ success: boolean; message: string; filename: string }>('/api/admin/backups/create', {
+      method: 'POST',
+    }),
+
+  deleteAdminBackup: (filename: string) =>
+    request<{ success: boolean; message: string }>(`/api/admin/backups/${filename}`, {
+      method: 'DELETE',
+    }),
+
+  downloadAdminBackup: (filename: string) => {
+    const token = tokenStorage.get();
+    window.open(`/api/admin/backups/download/${filename}?token=${token || ''}`, '_blank');
+  },
+
+  downloadLiveDatabase: () => {
+    const token = tokenStorage.get();
+    window.open(`/api/admin/database/download?token=${token || ''}`, '_blank');
+  },
 };

@@ -7,13 +7,14 @@ import { UserProfile } from '@diary/shared';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'glow_diary_super_cute_and_secret_key_2026_daily_joy';
 
-function formatUser(user: { id: string; username: string; name: string; avatarEmoji: string; targetDailyWords: number; createdAt: Date }): UserProfile {
+function formatUser(user: { id: string; username: string; name: string; avatarEmoji: string; targetDailyWords: number; isAdmin?: boolean; createdAt: Date }): UserProfile {
   return {
     id: user.id,
     username: user.username,
     name: user.name,
     avatarEmoji: user.avatarEmoji,
     targetDailyWords: user.targetDailyWords,
+    isAdmin: Boolean(user.isAdmin) || user.username === 'owner',
     createdAt: user.createdAt.toISOString(),
   };
 }

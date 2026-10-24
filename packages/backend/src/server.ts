@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.routes.js';
 import diaryRoutes from './routes/diary.routes.js';
 import audioRoutes from './routes/audio.routes.js';
 import backupRoutes from './routes/backup.routes.js';
+import adminRoutes from './routes/admin.routes.js';
 import { initBackupCron } from './services/backup.service.js';
 import { ensureDatabaseSchema } from './prisma.js';
 
@@ -49,6 +50,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/diary', diaryRoutes);
 app.use('/api/audio', audioRoutes);
 app.use('/api/backup', backupRoutes);
+app.use('/api/admin', adminRoutes);
 
 // In production, serve frontend static assets
 const frontendDist = path.resolve(__dirname, '../../frontend/dist');

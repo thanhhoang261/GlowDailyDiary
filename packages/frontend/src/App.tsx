@@ -6,6 +6,7 @@ import { DiaryEditor } from './components/DiaryEditor';
 import { CalendarView } from './components/CalendarView';
 import { HistoryPage } from './pages/HistoryPage';
 import { StatsPage } from './pages/StatsPage';
+import { AdminDashboard } from './pages/AdminDashboard';
 import { StreakStats } from '@diary/shared';
 import { api } from './services/api';
 
@@ -93,6 +94,8 @@ const MainApp: React.FC = () => {
         )}
 
         {activeTab === 'stats' && <StatsPage />}
+
+        {activeTab === 'admin' && <AdminDashboard />}
       </main>
     </div>
   );

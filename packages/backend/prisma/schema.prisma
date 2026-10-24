@@ -14,6 +14,7 @@ model User {
   name                 String
   avatarEmoji          String       @default("✨")
   targetDailyWords     Int          @default(100)
+  isAdmin              Boolean      @default(false)
   googleDriveConnected Boolean      @default(false)
   googleDriveEmail     String?
   googleRefreshToken   String?
