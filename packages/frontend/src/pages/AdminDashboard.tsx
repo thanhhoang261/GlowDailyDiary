@@ -215,8 +215,8 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleToggleAdminRole = async (targetUser: AdminUserItem) => {
-    if (targetUser.username === 'owner') {
-      alert('Tài khoản "owner" luôn là Quản trị viên cao nhất');
+    if (targetUser.username === 'admin' || targetUser.username === 'owner') {
+      alert('Tài khoản Quản trị viên chính luôn có quyền Quản trị viên cao nhất');
       return;
     }
     const nextRole = !targetUser.isAdmin;
@@ -232,8 +232,8 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleDeleteUser = async (targetUser: AdminUserItem) => {
-    if (targetUser.username === 'owner') {
-      alert('Không thể xóa tài khoản "owner"!');
+    if (targetUser.username === 'admin' || targetUser.username === 'owner') {
+      alert('Không thể xóa tài khoản Quản trị viên chính!');
       return;
     }
     if (!window.confirm(`CẢNH BÁO: Xóa tài khoản "${targetUser.username}" sẽ xóa sạch tất cả bài viết nhật ký và file ghi âm của người này. Bạn có chắc chắn không?`)) return;
@@ -711,9 +711,9 @@ export const AdminDashboard: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => handleDeleteUser(u)}
-                            disabled={u.username === 'owner'}
+                            disabled={u.username === 'admin' || u.username === 'owner'}
                             className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition disabled:opacity-20"
-                            title={u.username === 'owner' ? 'Không thể xóa owner' : 'Xóa tài khoản này'}
+                            title={u.username === 'admin' || u.username === 'owner' ? 'Không thể xóa tài khoản Quản trị viên chính' : 'Xóa tài khoản này'}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>

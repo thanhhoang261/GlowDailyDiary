@@ -259,7 +259,7 @@ export async function getAdminUsers(req: AuthenticatedRequest, res: Response): P
         name: u.name,
         avatarEmoji: u.avatarEmoji,
         targetDailyWords: u.targetDailyWords,
-        isAdmin: Boolean(u.isAdmin) || u.username === 'owner',
+        isAdmin: Boolean(u.isAdmin) || u.username === 'admin' || u.username === 'owner',
         entriesCount: u.entries.length,
         totalWords,
         audioCount,
@@ -338,8 +338,8 @@ export async function updateAdminUser(req: AuthenticatedRequest, res: Response):
       return;
     }
 
-    // Protect owner account from losing admin
-    const newIsAdmin = user.username === 'owner' ? true : (isAdmin !== undefined ? Boolean(isAdmin) : user.isAdmin);
+    // Protect owner/admin account from losing admin
+    const newIsAdmin = (user.username === 'admin' || user.username === 'owner') ? true : (isAdmin !== undefined ? Boolean(isAdmin) : user.isAdmin);
 
     const updated = await prisma.user.update({
       where: { id },
@@ -360,7 +360,7 @@ export async function updateAdminUser(req: AuthenticatedRequest, res: Response):
         name: updated.name,
         avatarEmoji: updated.avatarEmoji,
         targetDailyWords: updated.targetDailyWords,
-        isAdmin: Boolean(updated.isAdmin) || updated.username === 'owner',
+        isAdmin: Boolean(updated.isAdmin) || updated.username === 'admin' || updated.username === 'owner',
       },
     });
   } catch (error: any) {
@@ -374,8 +374,8 @@ export async function resetUserPasswordAdmin(req: AuthenticatedRequest, res: Res
     const id = String(req.params.id);
     const { newPassword } = req.body;
 
-    if (!newPassword || newPassword.trim().length < 3) {
-      res.status(400).json({ message: 'Mật khẩu mới tối thiểu 3 ký tự' });
+    if (!newPassword || newPassword.trim().length < 1) {
+      res.status(400).json({ message: 'Mật khẩu mới không được để trống' });
       return;
     }
 
@@ -410,8 +410,8 @@ export async function deleteAdminUser(req: AuthenticatedRequest, res: Response):
       return;
     }
 
-    if (user.username === 'owner') {
-      res.status(400).json({ message: 'Không thể xóa tài khoản Quản trị viên chính (owner)!' });
+    if (user.username === 'admin' || user.username === 'owner') {
+      res.status(400).json({ message: 'Không thể xóa tài khoản Quản trị viên chính (admin)!' });
       return;
     }
 

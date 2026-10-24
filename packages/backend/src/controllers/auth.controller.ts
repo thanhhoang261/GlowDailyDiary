@@ -14,7 +14,7 @@ function formatUser(user: { id: string; username: string; name: string; avatarEm
     name: user.name,
     avatarEmoji: user.avatarEmoji,
     targetDailyWords: user.targetDailyWords,
-    isAdmin: Boolean(user.isAdmin) || user.username === 'owner',
+    isAdmin: Boolean(user.isAdmin) || user.username === 'admin' || user.username === 'owner',
     createdAt: user.createdAt.toISOString(),
   };
 }
@@ -156,8 +156,8 @@ export async function resetPassword(req: Request, res: Response): Promise<void> 
       return;
     }
 
-    if (newPassword.trim().length < 3) {
-      res.status(400).json({ message: 'Mật khẩu mới quá ngắn (tối thiểu 3 ký tự)' });
+    if (newPassword.trim().length < 1) {
+      res.status(400).json({ message: 'Mật khẩu mới không được để trống' });
       return;
     }
 

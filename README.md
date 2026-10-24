@@ -71,11 +71,13 @@ pnpm dev
 
 ---
 
-## 🔑 Demo Account
+## 🔑 Quản trị viên & Tài khoản mặc định
 
-You can either register your own account or click **"Fill Demo Account"** on the login page:
-- **Username:** `owner`
-- **Password:** `diary2026`
+Hệ thống đi kèm tài khoản quản trị viên sẵn có:
+- **Tài khoản:** `admin`
+- **Mật khẩu:** `1`
+
+*(Bạn cũng có thể tự đăng ký tài khoản cá nhân mới hoặc đặt lại mật khẩu trực tiếp trên giao diện).*
 
 ---
 

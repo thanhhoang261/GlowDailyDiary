@@ -65,14 +65,6 @@ export const AuthPage: React.FC = () => {
     }
   };
 
-  const handleDemoLogin = () => {
-    setUsername('owner');
-    setPassword('diary2026');
-    setAuthMode('login');
-    setErrorMsg('');
-    setSuccessMsg('');
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       {/* Background cute blur bubbles */}
@@ -98,20 +90,6 @@ export const AuthPage: React.FC = () => {
             {authMode === 'reset' && 'Chỉ cần nhập tài khoản cũ và mật khẩu mới để đổi ngay'}
           </p>
         </div>
-
-        {/* Quick Demo Login Pill (Only in login mode) */}
-        {authMode === 'login' && (
-          <div className="flex justify-center">
-            <button
-              type="button"
-              onClick={handleDemoLogin}
-              className="text-xs font-extrabold text-amber-800 bg-gradient-to-r from-amber-100 to-rose-100 hover:from-amber-200 hover:to-rose-200 px-4 py-2 rounded-2xl border border-amber-200 flex items-center gap-1.5 transition bouncy-button shadow-2xs"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              <span>Fill Demo Account (owner / diary2026)</span>
-            </button>
-          </div>
-        )}
 
         {/* Success Notice */}
         {successMsg && (
@@ -185,7 +163,7 @@ export const AuthPage: React.FC = () => {
               <input
                 type="text"
                 required
-                placeholder="e.g. owner"
+                placeholder="e.g. admin"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-pink-50/50 border border-pink-100 focus:outline-none focus:border-rose-400 text-sm font-semibold text-glow-cocoa"

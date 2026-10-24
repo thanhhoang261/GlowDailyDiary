@@ -19,7 +19,7 @@ export const CuteNavbar: React.FC<CuteNavbarProps> = ({
 }) => {
   const { user, logout } = useAuth();
 
-  const isUserAdmin = user?.isAdmin || user?.username === 'owner';
+  const isUserAdmin = Boolean(user?.isAdmin) || user?.username === 'admin' || user?.username === 'owner';
 
   const navItems = [
     { id: 'today' as NavTab, label: "Today's Glow", icon: PenLine, emoji: '✍️' },

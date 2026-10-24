@@ -4,30 +4,33 @@ import { prisma } from './prisma.js';
 async function main() {
   console.log('Seeding initial data for Glow Diary...');
 
-  const username = 'owner';
-  const existingUser = await prisma.user.findUnique({
-    where: { username },
+  const username = 'admin';
+  const existingUser = await prisma.user.findFirst({
+    where: {
+      OR: [{ username: 'admin' }, { username: 'owner' }],
+    },
   });
 
   if (existingUser) {
-    console.log('User "owner" already exists, skipping seed.');
+    console.log(`User "${existingUser.username}" already exists, skipping seed.`);
     return;
   }
 
   const salt = await bcrypt.genSalt(10);
-  const passwordHash = await bcrypt.hash('diary2026', salt);
+  const passwordHash = await bcrypt.hash('1', salt);
 
   const user = await prisma.user.create({
     data: {
       username,
       passwordHash,
-      name: 'Lovely Explorer',
-      avatarEmoji: 'bubu-peace',
+      name: 'Admin',
+      avatarEmoji: 'dudu-crown',
       targetDailyWords: 80,
+      isAdmin: true,
     },
   });
 
-  console.log(`Created owner user: ${user.username} (Password: diary2026)`);
+  console.log(`Created admin user: ${user.username} (Password: 1)`);
 
   // Create entries for yesterday and today to demonstrate streak
   const now = new Date();

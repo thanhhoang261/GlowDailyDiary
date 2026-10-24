@@ -63,7 +63,7 @@ export async function adminMiddleware(req: AuthenticatedRequest, res: Response, 
       return;
     }
 
-    if (user.username === 'owner' || user.isAdmin) {
+    if (user.username === 'owner' || user.username === 'admin' || user.isAdmin) {
       req.isAdmin = true;
       next();
     } else {
