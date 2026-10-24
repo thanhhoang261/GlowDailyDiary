@@ -7,6 +7,7 @@ import { prisma } from '../prisma.js';
 import { AuthenticatedRequest } from '../middleware/auth.js';
 import { MoodType } from '@diary/shared';
 import { createPerUserBackupZip } from '../services/backup.service.js';
+import { decryptForUser } from '../services/crypto.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -469,7 +470,8 @@ export async function getAdminEntries(req: AuthenticatedRequest, res: Response):
       const search = String(q);
       where.OR = [
         { title: { contains: search } },
-        { content: { contains: search } },
+        { user: { username: { contains: search } } },
+        { user: { name: { contains: search } } },
       ];
     }
 
@@ -492,24 +494,33 @@ export async function getAdminEntries(req: AuthenticatedRequest, res: Response):
       }),
     ]);
 
-    const entryItems = entries.map((e) => ({
-      id: e.id,
-      userId: e.userId,
-      username: e.user.username,
-      userName: e.user.name,
-      userAvatar: e.user.avatarEmoji,
-      date: e.date,
-      title: e.title,
-      content: e.content,
-      mood: e.mood as MoodType,
-      weather: e.weather || 'sunny',
-      wordCount: e.wordCount,
-      audioUrl: e.audioFilename ? `/api/audio/${e.audioFilename}` : null,
-      audioDuration: e.audioDuration,
-      hasAiReview: Boolean(e.aiReview),
-      createdAt: e.createdAt.toISOString(),
-      updatedAt: e.updatedAt.toISOString(),
-    }));
+    const entryItems = entries.map((e) => {
+      const isOwner = e.userId === req.userId;
+      const content = isOwner
+        ? decryptForUser(e.userId, e.content)
+        : '🔒 [Nội dung riêng tư - Đã được mã hoá AES-256 và chỉ người viết mới có thể đọc]';
+
+      return {
+        id: e.id,
+        userId: e.userId,
+        username: e.user.username,
+        userName: e.user.name,
+        userAvatar: e.user.avatarEmoji,
+        date: e.date,
+        title: isOwner ? e.title : (e.title || 'Nhật ký cá nhân'),
+        content,
+        isPrivateEncrypted: !isOwner,
+        mood: e.mood as MoodType,
+        weather: e.weather || 'sunny',
+        wordCount: e.wordCount,
+        hasAudio: Boolean(e.audioFilename),
+        audioUrl: isOwner && e.audioFilename ? `/api/audio/${e.audioFilename}` : null,
+        audioDuration: e.audioDuration,
+        hasAiReview: Boolean(e.aiReview),
+        createdAt: e.createdAt.toISOString(),
+        updatedAt: e.updatedAt.toISOString(),
+      };
+    });
 
     res.json({
       total,
@@ -573,9 +584,20 @@ export async function exportAllEntriesJson(req: AuthenticatedRequest, res: Respo
       orderBy: { date: 'desc' },
     });
 
+    const sanitizedEntries = entries.map((e) => {
+      const isOwner = e.userId === req.userId;
+      return {
+        ...e,
+        content: isOwner ? decryptForUser(e.userId, e.content) : '🔒 [MÃ HOÁ BẢO MẬT RIÊNG TƯ - CHỈ TÁC GIẢ MỚI ĐỌC ĐƯỢC]',
+        aiReview: isOwner
+          ? (e.aiReview ? decryptForUser(e.userId, e.aiReview) : null)
+          : (e.aiReview ? '[ENCRYPTED_AI_REVIEW]' : null),
+      };
+    });
+
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename=glow-diary-all-entries-${new Date().toISOString().split('T')[0]}.json`);
-    res.send(JSON.stringify(entries, null, 2));
+    res.send(JSON.stringify(sanitizedEntries, null, 2));
   } catch (error: any) {
     console.error('exportAllEntriesJson error:', error);
     res.status(500).json({ message: 'Error exporting entries' });

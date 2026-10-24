@@ -27,6 +27,8 @@ import {
   Play,
   Pause,
   Filter,
+  Lock,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   AdminSystemOverview,
@@ -819,7 +821,14 @@ export const AdminDashboard: React.FC = () => {
 
                       <td className="p-3.5 max-w-xs">
                         <div className="font-extrabold text-glow-cocoa truncate">{e.title || '(Chưa đặt tiêu đề)'}</div>
-                        <div className="text-[11px] text-stone-500 line-clamp-1 mt-0.5">{e.content || '(Trống)'}</div>
+                        {e.isPrivateEncrypted ? (
+                          <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-rose-500">
+                            <Lock className="w-3 h-3 text-rose-400 shrink-0" />
+                            <span>Mã hoá riêng tư (Chỉ tác giả đọc được)</span>
+                          </div>
+                        ) : (
+                          <div className="text-[11px] text-stone-500 line-clamp-1 mt-0.5">{e.content || '(Trống)'}</div>
+                        )}
                       </td>
 
                       <td className="p-3.5 text-center">
@@ -831,7 +840,7 @@ export const AdminDashboard: React.FC = () => {
                       <td className="p-3.5 text-center font-bold text-purple-700">{e.wordCount}</td>
 
                       <td className="p-3.5 text-center">
-                        {e.audioUrl ? (
+                        {e.audioUrl || e.hasAudio ? (
                           <span className="text-emerald-600 font-bold text-[11px]">Có voice</span>
                         ) : (
                           <span className="text-stone-300">-</span>
@@ -1321,21 +1330,41 @@ export const AdminDashboard: React.FC = () => {
               </button>
             </div>
 
-            <h3 className="text-xl font-black text-glow-cocoa">
-              {previewEntry.title || '(Chưa đặt tiêu đề)'}
-            </h3>
-
-            <div className="text-sm leading-relaxed text-glow-cocoa whitespace-pre-wrap bg-pink-50/20 p-4 rounded-2xl border border-pink-100">
-              {previewEntry.content || '(Bài viết không có nội dung văn bản)'}
-            </div>
-
-            {previewEntry.audioUrl && (
-              <div className="pt-2">
-                <label className="text-[11px] font-bold text-glow-muted uppercase tracking-wider mb-1 block">
-                  Bản ghi âm giọng nói:
-                </label>
-                <CuteAudioPlayer src={previewEntry.audioUrl} initialDuration={previewEntry.audioDuration} />
+            {previewEntry.isPrivateEncrypted ? (
+              <div className="p-6 rounded-3xl bg-gradient-to-br from-rose-50 via-pink-50 to-amber-50 border border-pink-200 text-center flex flex-col items-center gap-2.5 my-2">
+                <div className="w-14 h-14 rounded-2xl bg-white shadow-soft flex items-center justify-center text-rose-500 border border-pink-100">
+                  <ShieldCheck className="w-7 h-7 text-rose-500" />
+                </div>
+                <h4 className="font-extrabold text-glow-cocoa text-base flex items-center gap-1.5">
+                  <Lock className="w-4 h-4 text-rose-500 inline" />
+                  Nội Dung Được Bảo Vệ Riêng Tư
+                </h4>
+                <p className="text-xs text-glow-muted max-w-md leading-relaxed">
+                  Nhật ký này đã được tự động mã hóa bằng thuật toán <strong>AES-256-GCM</strong> theo khóa bí mật riêng của tác giả. Để tôn trọng quyền riêng tư tuyệt đối, chỉ người viết mới có thể giải mã và đọc được toàn bộ nội dung.
+                </p>
+                <div className="text-[11px] font-bold text-rose-600 bg-white/80 px-3 py-1 rounded-xl border border-rose-200/60 mt-1">
+                  🔒 Quyền Quản trị viên chỉ quản lý metadata & dung lượng hệ thống
+                </div>
               </div>
+            ) : (
+              <>
+                <h3 className="text-xl font-black text-glow-cocoa">
+                  {previewEntry.title || '(Chưa đặt tiêu đề)'}
+                </h3>
+
+                <div className="text-sm leading-relaxed text-glow-cocoa whitespace-pre-wrap bg-pink-50/20 p-4 rounded-2xl border border-pink-100">
+                  {previewEntry.content || '(Bài viết không có nội dung văn bản)'}
+                </div>
+
+                {previewEntry.audioUrl && (
+                  <div className="pt-2">
+                    <label className="text-[11px] font-bold text-glow-muted uppercase tracking-wider mb-1 block">
+                      Bản ghi âm giọng nói:
+                    </label>
+                    <CuteAudioPlayer src={previewEntry.audioUrl} initialDuration={previewEntry.audioDuration} />
+                  </div>
+                )}
+              </>
             )}
 
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-pink-100">

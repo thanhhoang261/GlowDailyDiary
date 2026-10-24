@@ -333,9 +333,11 @@ export interface AdminEntryItem {
   date: string;
   title: string;
   content: string;
+  isPrivateEncrypted?: boolean;
   mood: MoodType;
   weather?: string;
   wordCount: number;
+  hasAudio?: boolean;
   audioUrl?: string | null;
   audioDuration?: number | null;
   hasAiReview: boolean;

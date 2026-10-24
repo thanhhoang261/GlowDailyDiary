@@ -5,6 +5,7 @@ import { ZipArchive } from 'archiver';
 import cron from 'node-cron';
 import { google } from 'googleapis';
 import { prisma } from '../prisma.js';
+import { decryptForUser } from './crypto.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -217,7 +218,7 @@ export async function createPerUserBackupZip(
         id: e.id,
         date: e.date,
         title: e.title,
-        content: e.content,
+        content: decryptForUser(user.id, e.content),
         mood: e.mood,
         weather: e.weather,
         vocabList,

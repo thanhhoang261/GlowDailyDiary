@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { isEncrypted, encryptForUser } from './services/crypto.service.js';
 
 export const prisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
@@ -71,6 +72,43 @@ export async function ensureDatabaseSchema(): Promise<void> {
         },
       });
       console.log('👑 [DB Auto-Migration] Created admin user with password 1 and isAdmin = true');
+    }
+
+    // Auto-encrypt any legacy unencrypted diary entries with AES-256-GCM
+    const legacyEntries = await prisma.diaryEntry.findMany({
+      select: { id: true, userId: true, content: true, aiReview: true },
+    });
+
+    let encryptedCount = 0;
+    for (const entry of legacyEntries) {
+      let needsUpdate = false;
+      let newContent = entry.content;
+      let newAiReview = entry.aiReview;
+
+      if (entry.content && !isEncrypted(entry.content)) {
+        newContent = encryptForUser(entry.userId, entry.content);
+        needsUpdate = true;
+      }
+
+      if (entry.aiReview && !isEncrypted(entry.aiReview)) {
+        newAiReview = encryptForUser(entry.userId, entry.aiReview);
+        needsUpdate = true;
+      }
+
+      if (needsUpdate) {
+        await prisma.diaryEntry.update({
+          where: { id: entry.id },
+          data: {
+            content: newContent,
+            aiReview: newAiReview,
+          },
+        });
+        encryptedCount++;
+      }
+    }
+
+    if (encryptedCount > 0) {
+      console.log(`🔐 [DB Auto-Migration] Encrypted ${encryptedCount} legacy diary entries with AES-256-GCM`);
     }
   } catch (err: any) {
     console.error('Error verifying database schema:', err.message);

@@ -3,6 +3,7 @@ import { AuthenticatedRequest } from '../middleware/auth.js';
 import { prisma } from '../prisma.js';
 import { DiaryEntry, DaySummary, StreakStats, MoodType, VocabItem, AiReviewResult } from '@diary/shared';
 import { reviewDiaryWithAi, saveUserApiKey, getUserAiConfig } from '../services/ai.service.js';
+import { encryptForUser, decryptForUser } from '../services/crypto.service.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -41,18 +42,21 @@ function formatDiaryEntry(entry: any): DiaryEntry {
 
   if (entry.aiReview) {
     try {
-      aiReview = JSON.parse(entry.aiReview);
+      const decryptedReview = decryptForUser(entry.userId, entry.aiReview);
+      aiReview = JSON.parse(decryptedReview);
     } catch {
       aiReview = null;
     }
   }
+
+  const decryptedContent = decryptForUser(entry.userId, entry.content);
 
   return {
     id: entry.id,
     userId: entry.userId,
     date: entry.date,
     title: entry.title,
-    content: entry.content,
+    content: decryptedContent,
     mood: entry.mood as MoodType,
     weather: entry.weather || 'sunny',
     vocabList,
@@ -117,7 +121,8 @@ export async function saveEntry(req: AuthenticatedRequest, res: Response): Promi
 
     const serializedVocab = JSON.stringify(vocabList);
     const serializedGratitude = JSON.stringify(gratitude);
-    const serializedAiReview = aiReview ? JSON.stringify(aiReview) : null;
+    const encryptedContent = encryptForUser(req.userId!, trimmedContent);
+    const encryptedAiReview = aiReview ? encryptForUser(req.userId!, JSON.stringify(aiReview)) : null;
 
     const entry = await prisma.diaryEntry.upsert({
       where: {
@@ -128,27 +133,27 @@ export async function saveEntry(req: AuthenticatedRequest, res: Response): Promi
       },
       update: {
         title: trimmedTitle,
-        content: trimmedContent,
+        content: encryptedContent,
         mood,
         weather,
         vocabList: serializedVocab,
         gratitude: serializedGratitude,
         wordCount,
         promptQuestion: promptQuestion || null,
-        ...(aiReview !== undefined ? { aiReview: serializedAiReview } : {}),
+        ...(aiReview !== undefined ? { aiReview: encryptedAiReview } : {}),
       },
       create: {
         userId: req.userId!,
         date,
         title: trimmedTitle,
-        content: trimmedContent,
+        content: encryptedContent,
         mood,
         weather,
         vocabList: serializedVocab,
         gratitude: serializedGratitude,
         wordCount,
         promptQuestion: promptQuestion || null,
-        aiReview: serializedAiReview,
+        aiReview: encryptedAiReview,
       },
     });
 
@@ -385,21 +390,37 @@ export async function searchEntries(req: AuthenticatedRequest, res: Response): P
       return;
     }
 
+    // Retrieve recent user entries and filter with decrypted content
     const entries = await prisma.diaryEntry.findMany({
       where: {
         userId: req.userId!,
-        OR: [
-          { title: { contains: q } },
-          { content: { contains: q } },
-          { vocabList: { contains: q } },
-          { gratitude: { contains: q } },
-        ],
       },
       orderBy: { date: 'desc' },
-      take: 30,
+      take: 200,
     });
 
-    res.json({ entries: entries.map(formatDiaryEntry) });
+    const formatted = entries.map(formatDiaryEntry);
+    const matched = formatted
+      .filter((e) => {
+        if (e.title.toLowerCase().includes(q)) return true;
+        if (e.content.toLowerCase().includes(q)) return true;
+        if (e.gratitude && e.gratitude.some((g) => g.toLowerCase().includes(q))) return true;
+        if (
+          e.vocabList &&
+          e.vocabList.some(
+            (v) =>
+              v.word.toLowerCase().includes(q) ||
+              v.meaning.toLowerCase().includes(q) ||
+              (v.example && v.example.toLowerCase().includes(q))
+          )
+        ) {
+          return true;
+        }
+        return false;
+      })
+      .slice(0, 30);
+
+    res.json({ entries: matched });
   } catch (error) {
     console.error('searchEntries error:', error);
     res.status(500).json({ message: 'Error searching entries' });
@@ -426,7 +447,7 @@ export async function reviewEntryWithAi(req: AuthenticatedRequest, res: Response
       apiKey,
     });
 
-    // If date is provided, update existing entry in database with the AI review
+    // If date is provided, update existing entry in database with encrypted AI review
     if (date) {
       const existing = await prisma.diaryEntry.findUnique({
         where: {
@@ -437,9 +458,10 @@ export async function reviewEntryWithAi(req: AuthenticatedRequest, res: Response
         },
       });
       if (existing) {
+        const encryptedAiReview = encryptForUser(req.userId!, JSON.stringify(result));
         await prisma.diaryEntry.update({
           where: { id: existing.id },
-          data: { aiReview: JSON.stringify(result) },
+          data: { aiReview: encryptedAiReview },
         });
       }
     }
