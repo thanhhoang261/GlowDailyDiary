@@ -254,6 +254,11 @@ export interface RegisterDto {
   avatarEmoji?: string;
 }
 
+export interface ResetPasswordDto {
+  username: string;
+  newPassword: string;
+}
+
 export interface UserBackupStatus {
   googleDriveConnected: boolean;
   googleDriveEmail?: string | null;

@@ -7,6 +7,7 @@ interface AuthContextType {
   loading: boolean;
   login: (dto: LoginDto) => Promise<void>;
   register: (dto: RegisterDto) => Promise<void>;
+  resetPassword: (dto: { username: string; newPassword: string }) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
@@ -54,6 +55,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(res.user);
   };
 
+  const resetPassword = async (dto: { username: string; newPassword: string }) => {
+    const res = await api.resetPassword(dto);
+    tokenStorage.set(res.token);
+    setUser(res.user);
+  };
+
   const logout = () => {
     tokenStorage.clear();
     setUser(null);
@@ -71,6 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loading,
         login,
         register,
+        resetPassword,
         logout,
         refreshUser,
         updateProfile,

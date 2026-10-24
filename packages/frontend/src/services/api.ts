@@ -63,6 +63,12 @@ export const api = {
       body: JSON.stringify(dto),
     }),
 
+  resetPassword: (dto: { username: string; newPassword: string }) =>
+    request<AuthResponse & { message: string }>('/api/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    }),
+
   getMe: () =>
     request<{ user: UserProfile }>('/api/auth/me', {
       method: 'GET',

@@ -1,29 +1,37 @@
 import React, { useState } from 'react';
-import { Heart, Sparkles, ArrowRight, Lock, User, KeyRound } from 'lucide-react';
+import { Heart, Sparkles, ArrowRight, Lock, User, KeyRound, Eye, EyeOff, ShieldCheck, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { BUBU_AVATARS, BubuAvatar } from '../components/BubuAvatar';
+import { BUBU_AVATARS } from '../components/BubuAvatar';
+
+type AuthMode = 'login' | 'register' | 'reset';
 
 export const AuthPage: React.FC = () => {
-  const { login, register } = useAuth();
-  const [isRegister, setIsRegister] = useState(false);
+  const { login, register, resetPassword } = useAuth();
+  const [authMode, setAuthMode] = useState<AuthMode>('login');
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [name, setName] = useState('');
   const [avatarEmoji, setAvatarEmoji] = useState('bubu-peace');
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    setSuccessMsg('');
     setLoading(true);
 
     try {
-      if (isRegister) {
+      if (authMode === 'register') {
         if (!name.trim()) {
-          setErrorMsg('Please enter your name');
+          setErrorMsg('Vui lòng nhập tên của bạn');
           setLoading(false);
           return;
         }
@@ -33,6 +41,17 @@ export const AuthPage: React.FC = () => {
           name: name.trim(),
           avatarEmoji,
         });
+      } else if (authMode === 'reset') {
+        if (!username.trim() || !newPassword.trim()) {
+          setErrorMsg('Vui lòng nhập tên tài khoản và mật khẩu mới');
+          setLoading(false);
+          return;
+        }
+        await resetPassword({
+          username: username.trim(),
+          newPassword: newPassword.trim(),
+        });
+        setSuccessMsg('Đặt lại mật khẩu thành công! Đang chuyển vào nhật ký...');
       } else {
         await login({
           username: username.trim(),
@@ -40,7 +59,7 @@ export const AuthPage: React.FC = () => {
         });
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Authentication failed');
+      setErrorMsg(err.message || 'Thao tác không thành công');
     } finally {
       setLoading(false);
     }
@@ -49,7 +68,9 @@ export const AuthPage: React.FC = () => {
   const handleDemoLogin = () => {
     setUsername('owner');
     setPassword('diary2026');
-    setIsRegister(false);
+    setAuthMode('login');
+    setErrorMsg('');
+    setSuccessMsg('');
   };
 
   return (
@@ -72,23 +93,33 @@ export const AuthPage: React.FC = () => {
             Daily Glow Diary <Heart className="w-4 h-4 fill-rose-400 text-rose-400 inline" />
           </h1>
           <p className="text-xs font-semibold text-glow-muted mt-1">
-            {isRegister
-              ? 'Begin your cozy English writing & speaking journey'
-              : 'Welcome back to your personal sanctuary'}
+            {authMode === 'register' && 'Bắt đầu hành trình viết nhật ký & luyện nói tiếng Anh ấm áp'}
+            {authMode === 'login' && 'Chào mừng bạn quay lại góc nhật ký thân yêu'}
+            {authMode === 'reset' && 'Chỉ cần nhập tài khoản cũ và mật khẩu mới để đổi ngay'}
           </p>
         </div>
 
-        {/* Quick Demo Login Pill */}
-        <div className="flex justify-center">
-          <button
-            type="button"
-            onClick={handleDemoLogin}
-            className="text-xs font-extrabold text-amber-800 bg-gradient-to-r from-amber-100 to-rose-100 hover:from-amber-200 hover:to-rose-200 px-4 py-2 rounded-2xl border border-amber-200 flex items-center gap-1.5 transition bouncy-button shadow-2xs"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            <span>Fill Demo Account (owner / diary2026)</span>
-          </button>
-        </div>
+        {/* Quick Demo Login Pill (Only in login mode) */}
+        {authMode === 'login' && (
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={handleDemoLogin}
+              className="text-xs font-extrabold text-amber-800 bg-gradient-to-r from-amber-100 to-rose-100 hover:from-amber-200 hover:to-rose-200 px-4 py-2 rounded-2xl border border-amber-200 flex items-center gap-1.5 transition bouncy-button shadow-2xs"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <span>Fill Demo Account (owner / diary2026)</span>
+            </button>
+          </div>
+        )}
+
+        {/* Success Notice */}
+        {successMsg && (
+          <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700 text-center flex items-center justify-center gap-2">
+            <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{successMsg}</span>
+          </div>
+        )}
 
         {/* Error notice */}
         {errorMsg && (
@@ -99,18 +130,19 @@ export const AuthPage: React.FC = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {isRegister && (
+          {/* Register: Name & Avatar */}
+          {authMode === 'register' && (
             <>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold text-glow-muted uppercase tracking-wider">
-                  Your Name
+                  Tên của bạn (Your Name)
                 </label>
                 <div className="relative">
                   <User className="w-4 h-4 text-pink-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Mia Blossom"
+                    placeholder="ví dụ: Mia Blossom"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-pink-50/50 border border-pink-100 focus:outline-none focus:border-rose-400 text-sm font-semibold text-glow-cocoa"
@@ -120,7 +152,7 @@ export const AuthPage: React.FC = () => {
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-glow-muted uppercase tracking-wider">
-                  Choose Avatar Emoji
+                  Chọn Avatar Bubu & Dudu
                 </label>
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {BUBU_AVATARS.map((av) => (
@@ -143,9 +175,10 @@ export const AuthPage: React.FC = () => {
             </>
           )}
 
+          {/* Username Field */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold text-glow-muted uppercase tracking-wider">
-              Username
+              {authMode === 'reset' ? 'Tài khoản cũ (Username)' : 'Tài khoản (Username)'}
             </label>
             <div className="relative">
               <User className="w-4 h-4 text-pink-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -160,47 +193,150 @@ export const AuthPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold text-glow-muted uppercase tracking-wider">
-              Password
-            </label>
-            <div className="relative">
-              <KeyRound className="w-4 h-4 text-pink-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="password"
-                required
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-pink-50/50 border border-pink-100 focus:outline-none focus:border-rose-400 text-sm font-semibold text-glow-cocoa"
-              />
+          {/* Normal Password Field (Login / Register) */}
+          {authMode !== 'reset' && (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-glow-muted uppercase tracking-wider">
+                  Mật khẩu
+                </label>
+                {authMode === 'login' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode('reset');
+                      setErrorMsg('');
+                      setSuccessMsg('');
+                    }}
+                    className="text-[11px] font-bold text-rose-500 hover:text-rose-700 transition"
+                  >
+                    Quên mật khẩu?
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <KeyRound className="w-4 h-4 text-pink-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2.5 rounded-2xl bg-pink-50/50 border border-pink-100 focus:outline-none focus:border-rose-400 text-sm font-semibold text-glow-cocoa"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-glow-muted hover:text-glow-cocoa"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
+          {/* Reset Password Field (Reset Mode) */}
+          {authMode === 'reset' && (
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-bold text-glow-muted uppercase tracking-wider">
+                Mật khẩu mới (New Password)
+              </label>
+              <div className="relative">
+                <KeyRound className="w-4 h-4 text-pink-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type={showNewPassword ? 'text' : 'password'}
+                  required
+                  placeholder="Nhập mật khẩu mới muốn đặt..."
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2.5 rounded-2xl bg-pink-50/50 border border-pink-100 focus:outline-none focus:border-rose-400 text-sm font-semibold text-glow-cocoa"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-glow-muted hover:text-glow-cocoa"
+                >
+                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
             className="mt-2 w-full py-3 rounded-2xl bg-gradient-to-r from-pink-400 via-rose-400 to-amber-400 hover:from-pink-500 hover:to-amber-500 text-white font-extrabold text-sm shadow-cute flex items-center justify-center gap-2 bouncy-button disabled:opacity-60 cursor-pointer"
           >
-            <span>{loading ? 'Entering...' : isRegister ? 'Start Writing' : 'Open My Diary'}</span>
+            <span>
+              {loading
+                ? 'Đang xử lý...'
+                : authMode === 'register'
+                ? 'Bắt đầu viết nhật ký ✨'
+                : authMode === 'reset'
+                ? 'Đặt lại mật khẩu & Đăng nhập ngay ✨'
+                : 'Mở nhật ký của tôi ✨'}
+            </span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
 
-        {/* Toggle between Login and Register */}
-        <div className="text-center pt-2 border-t border-pink-100/70">
-          <button
-            type="button"
-            onClick={() => {
-              setIsRegister(!isRegister);
-              setErrorMsg('');
-            }}
-            className="text-xs font-bold text-rose-500 hover:text-rose-700 transition"
-          >
-            {isRegister
-              ? 'Already have an account? Sign in here'
-              : 'First time here? Create your diary account'}
-          </button>
+        {/* Navigation Switchers */}
+        <div className="flex flex-col items-center gap-2 pt-2 border-t border-pink-100/70 text-center">
+          {authMode === 'login' && (
+            <div className="flex flex-col gap-1.5 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('register');
+                  setErrorMsg('');
+                  setSuccessMsg('');
+                }}
+                className="text-rose-500 hover:text-rose-700 transition"
+              >
+                Lần đầu ghé thăm? Tạo tài khoản nhật ký mới
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('reset');
+                  setErrorMsg('');
+                  setSuccessMsg('');
+                }}
+                className="text-glow-muted hover:text-glow-cocoa text-[11px] transition"
+              >
+                🔑 Quên mật khẩu? Đặt lại mật khẩu tài khoản
+              </button>
+            </div>
+          )}
+
+          {authMode === 'register' && (
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('login');
+                setErrorMsg('');
+                setSuccessMsg('');
+              }}
+              className="text-xs font-bold text-rose-500 hover:text-rose-700 transition"
+            >
+              Đã có tài khoản? Đăng nhập tại đây
+            </button>
+          )}
+
+          {authMode === 'reset' && (
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('login');
+                setErrorMsg('');
+                setSuccessMsg('');
+              }}
+              className="text-xs font-bold text-rose-500 hover:text-rose-700 transition"
+            >
+              ← Quay lại trang Đăng nhập
+            </button>
+          )}
         </div>
       </div>
     </div>

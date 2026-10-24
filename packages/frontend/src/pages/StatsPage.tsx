@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Flame, Sparkles, Trophy, Mic, BookOpen, Heart, User, Check } from 'lucide-react';
+import { Flame, Sparkles, Trophy, Mic, BookOpen, Heart, User, Check, KeyRound } from 'lucide-react';
 import { StreakStats } from '@diary/shared';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -19,6 +19,11 @@ export const StatsPage: React.FC = () => {
   const [aiConfig, setAiConfig] = useState<{ hasCustomKey: boolean; hasEnvKey: boolean; isReady: boolean } | null>(null);
   const [openaiKeyInput, setOpenaiKeyInput] = useState('');
   const [keySavedMsg, setKeySavedMsg] = useState(false);
+
+  // Password reset state
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [passwordMsg, setPasswordMsg] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
     fetchStats();
@@ -69,6 +74,26 @@ export const StatsPage: React.FC = () => {
       setTimeout(() => setSaveMsg(false), 3000);
     } catch (err: any) {
       alert(`Failed to update profile: ${err.message}`);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!newPasswordInput.trim()) {
+      setPasswordError('Vui lòng nhập mật khẩu mới');
+      return;
+    }
+    setPasswordError('');
+    try {
+      if (!user?.username) return;
+      await api.resetPassword({
+        username: user.username,
+        newPassword: newPasswordInput.trim(),
+      });
+      setNewPasswordInput('');
+      setPasswordMsg('Đã cập nhật mật khẩu mới thành công! ✨');
+      setTimeout(() => setPasswordMsg(''), 4000);
+    } catch (err: any) {
+      setPasswordError(err.message || 'Không thể đổi mật khẩu');
     }
   };
 
@@ -290,6 +315,46 @@ export const StatsPage: React.FC = () => {
             <p className="text-[11px] text-glow-muted">
               Used strictly to check spelling and grammar for your English journal entries.
             </p>
+          </div>
+
+          {/* Quick Password Reset for Owner */}
+          <div className="flex flex-col gap-2 pt-3 border-t border-pink-100">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-glow-muted uppercase tracking-wider flex items-center gap-1.5">
+                <KeyRound className="w-3.5 h-3.5 text-rose-500" />
+                <span>Đổi mật khẩu tài khoản ({user?.username})</span>
+              </label>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="password"
+                placeholder="Nhập mật khẩu mới muốn đặt..."
+                value={newPasswordInput}
+                onChange={(e) => {
+                  setNewPasswordInput(e.target.value);
+                  setPasswordError('');
+                }}
+                className="flex-1 px-4 py-2 rounded-2xl bg-pink-50/50 border border-pink-100 focus:outline-none focus:border-rose-400 text-xs text-glow-cocoa"
+              />
+              <button
+                type="button"
+                onClick={handleResetPassword}
+                disabled={!newPasswordInput.trim()}
+                className="px-4 py-2 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 text-white text-xs font-bold transition bouncy-button disabled:opacity-40"
+              >
+                Đổi mật khẩu
+              </button>
+            </div>
+            {passwordMsg && (
+              <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
+                <Check className="w-3.5 h-3.5 text-emerald-500" /> {passwordMsg}
+              </span>
+            )}
+            {passwordError && (
+              <span className="text-[11px] font-bold text-rose-600">
+                {passwordError}
+              </span>
+            )}
           </div>
 
           {/* Submit */}

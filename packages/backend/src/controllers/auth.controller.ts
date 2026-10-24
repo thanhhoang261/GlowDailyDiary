@@ -135,3 +135,49 @@ export async function updateProfile(req: AuthenticatedRequest, res: Response): P
     res.status(500).json({ message: 'Internal server error updating profile' });
   }
 }
+
+export async function resetPassword(req: Request, res: Response): Promise<void> {
+  try {
+    const { username, newPassword } = req.body;
+
+    if (!username || !newPassword) {
+      res.status(400).json({ message: 'Tài khoản và mật khẩu mới là bắt buộc' });
+      return;
+    }
+
+    const trimmedUsername = username.trim().toLowerCase();
+    const user = await prisma.user.findUnique({
+      where: { username: trimmedUsername },
+    });
+
+    if (!user) {
+      res.status(404).json({ message: 'Không tìm thấy tài khoản này trong hệ thống' });
+      return;
+    }
+
+    if (newPassword.trim().length < 3) {
+      res.status(400).json({ message: 'Mật khẩu mới quá ngắn (tối thiểu 3 ký tự)' });
+      return;
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(newPassword, salt);
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash },
+    });
+
+    const token = jwt.sign({ userId: updatedUser.id }, JWT_SECRET, { expiresIn: '30d' });
+
+    res.json({
+      success: true,
+      message: 'Đặt lại mật khẩu thành công! ✨',
+      token,
+      user: formatUser(updatedUser),
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Lỗi máy chủ khi đặt lại mật khẩu' });
+  }
+}
