@@ -6,6 +6,7 @@ import { DiaryEditor } from './components/DiaryEditor';
 import { CalendarView } from './components/CalendarView';
 import { HistoryPage } from './pages/HistoryPage';
 import { StatsPage } from './pages/StatsPage';
+import { EnglishCoachPage } from './pages/EnglishCoachPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { StreakStats } from '@diary/shared';
 import { api } from './services/api';
@@ -16,6 +17,7 @@ const MainApp: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     return new Date().toISOString().split('T')[0];
   });
+  const [initialStarter, setInitialStarter] = useState<string | null>(null);
   const [streakStats, setStreakStats] = useState<StreakStats | null>(null);
 
   const refreshStreak = async () => {
@@ -69,8 +71,21 @@ const MainApp: React.FC = () => {
         {activeTab === 'today' && (
           <DiaryEditor
             initialDate={selectedDate}
+            initialStarter={initialStarter}
             onEntrySaved={() => refreshStreak()}
             onEntryDeleted={() => refreshStreak()}
+            onOpenCoachTab={() => setActiveTab('coach')}
+          />
+        )}
+
+        {activeTab === 'coach' && (
+          <EnglishCoachPage
+            onNavigateToToday={(promptText) => {
+              if (promptText) {
+                setInitialStarter(promptText);
+              }
+              setActiveTab('today');
+            }}
           />
         )}
 

@@ -16,14 +16,17 @@ import { MoodType, DiaryEntry, AiReviewResult } from '@diary/shared';
 import { api } from '../services/api';
 import { MoodPicker } from './MoodPicker';
 import { EnglishPromptBanner } from './EnglishPromptBanner';
+import { TodayCoachCard } from './TodayCoachCard';
 import { AudioRecorder } from './AudioRecorder';
 import { AiReviewSection } from './AiReviewSection';
 import { useAuth } from '../context/AuthContext';
 
 interface DiaryEditorProps {
   initialDate: string;
+  initialStarter?: string | null;
   onEntrySaved?: (entry: DiaryEntry) => void;
   onEntryDeleted?: (date: string) => void;
+  onOpenCoachTab?: () => void;
 }
 
 const WEATHERS = [
@@ -42,8 +45,10 @@ function countWords(str: string): number {
 
 export const DiaryEditor: React.FC<DiaryEditorProps> = ({
   initialDate,
+  initialStarter,
   onEntrySaved,
   onEntryDeleted,
+  onOpenCoachTab,
 }) => {
   const { user } = useAuth();
   const [date, setDate] = useState<string>(initialDate);
@@ -80,6 +85,13 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
   useEffect(() => {
     loadDateEntry(date);
   }, [date]);
+
+  // Insert initial starter from coach challenge if provided
+  useEffect(() => {
+    if (initialStarter && !isLoading) {
+      handleInsertStarter(initialStarter);
+    }
+  }, [initialStarter, isLoading]);
 
   const loadDateEntry = async (targetDate: string) => {
     setIsLoading(true);
@@ -309,6 +321,12 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
             currentPrompt={promptQuestion}
             onSelectPrompt={(p) => setPromptQuestion(p)}
             onInsertStarter={handleInsertStarter}
+          />
+
+          {/* Today Personalized Coach Tips & Challenge */}
+          <TodayCoachCard
+            onInsertStarter={handleInsertStarter}
+            onOpenCoachTab={onOpenCoachTab}
           />
 
           {/* Mood & Weather Selection */}

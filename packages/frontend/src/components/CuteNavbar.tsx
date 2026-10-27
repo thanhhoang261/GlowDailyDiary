@@ -1,10 +1,10 @@
 import React from 'react';
-import { PenLine, Calendar, BookOpen, BarChart3, LogOut, Flame, Heart, Shield } from 'lucide-react';
+import { PenLine, Calendar, BookOpen, BarChart3, LogOut, Flame, Heart, Shield, GraduationCap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { StreakStats } from '@diary/shared';
 import { BubuAvatar } from './BubuAvatar';
 
-export type NavTab = 'today' | 'calendar' | 'journey' | 'stats' | 'admin';
+export type NavTab = 'today' | 'coach' | 'calendar' | 'journey' | 'stats' | 'admin';
 
 interface CuteNavbarProps {
   activeTab: NavTab;
@@ -23,6 +23,7 @@ export const CuteNavbar: React.FC<CuteNavbarProps> = ({
 
   const navItems = [
     { id: 'today' as NavTab, label: "Today's Glow", icon: PenLine, emoji: '✍️' },
+    { id: 'coach' as NavTab, label: 'English Coach', icon: GraduationCap, emoji: '🎓' },
     { id: 'calendar' as NavTab, label: 'Calendar & Track', icon: Calendar, emoji: '📅' },
     { id: 'journey' as NavTab, label: 'My Journey', icon: BookOpen, emoji: '📖' },
     { id: 'stats' as NavTab, label: 'Milestones', icon: BarChart3, emoji: '✨' },

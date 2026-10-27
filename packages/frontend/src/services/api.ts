@@ -8,6 +8,7 @@ import {
   DaySummary,
   StreakStats,
   AiReviewResult,
+  CoachReport,
   AdminSystemOverview,
   AdminUserItem,
   AdminEntryItem,
@@ -205,6 +206,16 @@ export const api = {
 
   setAiKey: (apiKey: string | null) =>
     request<{ success: boolean; message: string }>('/api/diary/ai/key', {
+      method: 'POST',
+      body: JSON.stringify({ apiKey }),
+    }),
+
+  // AI Personalized English Coach
+  getCoachReport: () =>
+    request<{ report: CoachReport }>('/api/diary/coach', { method: 'GET' }),
+
+  refreshCoachReport: (apiKey?: string) =>
+    request<{ report: CoachReport; success: boolean; message: string }>('/api/diary/coach/refresh', {
       method: 'POST',
       body: JSON.stringify({ apiKey }),
     }),

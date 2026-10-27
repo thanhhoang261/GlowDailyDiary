@@ -10,6 +10,8 @@ import {
   reviewEntryWithAi,
   getAiConfigController,
   setAiKeyController,
+  getCoachReportController,
+  refreshCoachReportController,
 } from '../controllers/diary.controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -30,5 +32,9 @@ router.get('/search', searchEntries);
 router.post('/ai/review', reviewEntryWithAi);
 router.get('/ai/config', getAiConfigController);
 router.post('/ai/key', setAiKeyController);
+
+// AI Personalized English Coach
+router.get('/coach', getCoachReportController);
+router.post('/coach/refresh', refreshCoachReportController);
 
 export default router;

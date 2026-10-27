@@ -120,6 +120,61 @@ export interface AiReviewRequestDto {
   apiKey?: string;
 }
 
+// ==========================================
+// AI English Coach (Personalized Insights)
+// ==========================================
+
+export interface RecurringMistakeExample {
+  wrong: string;
+  better: string;
+  note: string;
+}
+
+export interface RecurringMistake {
+  category: string;
+  description: string;
+  frequency: 'Thường xuyên' | 'Thỉnh thoảng';
+  examples: RecurringMistakeExample[];
+  quickTip: string;
+}
+
+export interface BetterAlternative {
+  word: string;
+  meaning: string;
+  example: string;
+}
+
+export interface VocabularyUpgrade {
+  originalWord: string;
+  reason: string;
+  betterAlternatives: BetterAlternative[];
+}
+
+export interface WritingChallenge {
+  title: string;
+  description: string;
+  suggestedPrompt: string;
+}
+
+export interface GrammarMiniLesson {
+  title: string;
+  rule: string;
+  keyPoints: string[];
+  commonPitfall: string;
+}
+
+export interface CoachReport {
+  analyzedEntriesCount: number;
+  analyzedAt: string;
+  overallLevelSummary: string;
+  strengths: string[];
+  recurringMistakes: RecurringMistake[];
+  vocabularyUpgrades: VocabularyUpgrade[];
+  grammarMiniLesson: GrammarMiniLesson;
+  dailyTip: string;
+  todayChallenge: WritingChallenge;
+}
+
 export interface UserProfile {
   id: string;
   username: string;

@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth.js';
 import { prisma } from '../prisma.js';
 import { DiaryEntry, DaySummary, StreakStats, MoodType, VocabItem, AiReviewResult } from '@diary/shared';
-import { reviewDiaryWithAi, saveUserApiKey, getUserAiConfig } from '../services/ai.service.js';
+import { reviewDiaryWithAi, saveUserApiKey, getUserAiConfig, getOrGenerateCoachReport } from '../services/ai.service.js';
 import { encryptForUser, decryptForUser } from '../services/crypto.service.js';
 import path from 'path';
 import fs from 'fs';
@@ -499,5 +499,40 @@ export async function setAiKeyController(req: AuthenticatedRequest, res: Respons
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message || 'Error saving AI key' });
+  }
+}
+
+export async function getCoachReportController(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const report = await getOrGenerateCoachReport(req.userId!);
+    res.json({ report });
+  } catch (error: any) {
+    console.error('getCoachReport error:', error);
+    if (error.message === 'NO_API_KEY') {
+      res.status(400).json({
+        code: 'NO_API_KEY',
+        message: 'Vui lòng cung cấp OpenAI API key để nhận phân tích và lời khuyên từ English Coach.',
+      });
+      return;
+    }
+    res.status(500).json({ message: error.message || 'Error fetching Coach report' });
+  }
+}
+
+export async function refreshCoachReportController(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const { apiKey } = req.body;
+    const report = await getOrGenerateCoachReport(req.userId!, apiKey, true);
+    res.json({ report, success: true, message: 'Đã cập nhật báo cáo tiến bộ tiếng Anh mới nhất!' });
+  } catch (error: any) {
+    console.error('refreshCoachReport error:', error);
+    if (error.message === 'NO_API_KEY') {
+      res.status(400).json({
+        code: 'NO_API_KEY',
+        message: 'Vui lòng cung cấp OpenAI API key để nhận phân tích và lời khuyên từ English Coach.',
+      });
+      return;
+    }
+    res.status(500).json({ message: error.message || 'Error refreshing Coach report' });
   }
 }

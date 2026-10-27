@@ -34,6 +34,16 @@ export async function ensureDatabaseSchema(): Promise<void> {
       console.log('📦 [DB Auto-Migration] Added isAdmin to User');
     }
 
+    if (!userColNames.has('coachReport')) {
+      await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN "coachReport" TEXT;');
+      console.log('📦 [DB Auto-Migration] Added coachReport to User');
+    }
+
+    if (!userColNames.has('lastCoachAnalysisAt')) {
+      await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN "lastCoachAnalysisAt" DATETIME;');
+      console.log('📦 [DB Auto-Migration] Added lastCoachAnalysisAt to User');
+    }
+
     // Ensure admin user exists with username "admin" and password "1"
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash('1', salt);
