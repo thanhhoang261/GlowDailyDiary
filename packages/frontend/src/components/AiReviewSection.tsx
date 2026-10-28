@@ -62,7 +62,11 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
   const [generalQuestion, setGeneralQuestion] = useState<string>('');
   const [isSendingGeneral, setIsSendingGeneral] = useState<boolean>(false);
 
-  const handleAskAboutChange = async (idx: number, customQ?: string) => {
+  const handleAskAboutChange = async (idx: number, customQ?: string, e?: React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (!aiReview) return;
     const item = aiReview.changes[idx];
     if (!item) return;
@@ -97,7 +101,11 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
     }
   };
 
-  const handleAskGeneral = async (customQ?: string) => {
+  const handleAskGeneral = async (customQ?: string, e?: React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (!aiReview) return;
     const question = (customQ || generalQuestion).trim();
     if (!question) return;
@@ -499,25 +507,27 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
                           )}
 
                           {/* Input row */}
-                          <form
-                            onSubmit={(e) => {
-                              e.preventDefault();
-                              handleAskAboutChange(idx);
-                            }}
-                            className="flex items-center gap-1.5 pt-0.5"
-                          >
+                          <div className="flex items-center gap-1.5 pt-0.5">
                             <input
                               type="text"
                               placeholder="Nhập câu hỏi về lỗi này... (Enter để gửi)"
                               value={changeQuestionInputs[idx] || ''}
                               onChange={(e) => setChangeQuestionInputs((prev) => ({ ...prev, [idx]: e.target.value }))}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleAskAboutChange(idx);
+                                }
+                              }}
                               disabled={sendingChangeIdx === idx}
                               className="flex-1 px-3 py-1.5 rounded-xl bg-white border border-purple-200 text-xs text-glow-cocoa focus:outline-none focus:border-purple-400 placeholder:text-stone-400 shadow-2xs"
                             />
                             <button
-                              type="submit"
+                              type="button"
+                              onClick={(e) => handleAskAboutChange(idx, undefined, e)}
                               disabled={sendingChangeIdx === idx || !(changeQuestionInputs[idx] || '').trim()}
-                              className="p-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-40 transition shrink-0 shadow-2xs"
+                              className="p-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-40 transition shrink-0 shadow-2xs cursor-pointer"
                               title="Gửi câu hỏi"
                             >
                               {sendingChangeIdx === idx ? (
@@ -526,7 +536,7 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
                                 <Send className="w-3.5 h-3.5" />
                               )}
                             </button>
-                          </form>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -615,25 +625,27 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
                 )}
 
                 {/* General Input Form */}
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleAskGeneral();
-                  }}
-                  className="flex items-center gap-2 pt-1"
-                >
+                <div className="flex items-center gap-2 pt-1">
                   <input
                     type="text"
                     placeholder="Hỏi AI Tutor về bài viết này... (Ví dụ: Tại sao câu này lại dùng thì quá khứ?)"
                     value={generalQuestion}
                     onChange={(e) => setGeneralQuestion(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleAskGeneral();
+                      }
+                    }}
                     disabled={isSendingGeneral}
                     className="flex-1 px-4 py-2.5 rounded-2xl bg-white border border-purple-200 text-xs font-medium text-glow-cocoa focus:outline-none focus:border-purple-400 placeholder:text-stone-400 shadow-2xs"
                   />
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={(e) => handleAskGeneral(undefined, e)}
                     disabled={isSendingGeneral || !generalQuestion.trim()}
-                    className="px-4 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-soft transition bouncy-button disabled:opacity-40 shrink-0"
+                    className="px-4 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-soft transition bouncy-button disabled:opacity-40 shrink-0 cursor-pointer"
                   >
                     {isSendingGeneral ? (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -644,7 +656,7 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
                       </>
                     )}
                   </button>
-                </form>
+                </div>
               </div>
             );
           })()}

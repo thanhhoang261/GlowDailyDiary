@@ -315,7 +315,7 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
           </p>
         </div>
       ) : (
-        <form onSubmit={handleSave} className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6">
           {/* Daily English Prompt */}
           <EnglishPromptBanner
             currentPrompt={promptQuestion}
@@ -519,7 +519,8 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
             </div>
 
             <button
-              type="submit"
+              type="button"
+              onClick={() => handleSave()}
               disabled={isSaving}
               className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 hover:from-pink-600 hover:to-amber-600 text-white font-extrabold text-sm shadow-cute bouncy-button disabled:opacity-60 cursor-pointer"
             >
@@ -527,7 +528,7 @@ export const DiaryEditor: React.FC<DiaryEditorProps> = ({
               <span>{isSaving ? 'Saving Memory...' : 'Save My Day ✨'}</span>
             </button>
           </div>
-        </form>
+        </div>
       )}
     </div>
   );
