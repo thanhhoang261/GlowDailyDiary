@@ -14,6 +14,9 @@ import {
   BookCheck,
   ShieldCheck,
   FileText,
+  MessageSquare,
+  Send,
+  GraduationCap,
 } from 'lucide-react';
 import { AiReviewResult } from '@diary/shared';
 import { api } from '../services/api';
@@ -50,6 +53,77 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
 
   // Check if AI is ready on mount
   const [hasConfiguredKey, setHasConfiguredKey] = useState<boolean>(false);
+
+  // Discussion state
+  const [openChangeChatIdx, setOpenChangeChatIdx] = useState<number | null>(null);
+  const [changeQuestionInputs, setChangeQuestionInputs] = useState<Record<number, string>>({});
+  const [sendingChangeIdx, setSendingChangeIdx] = useState<number | null>(null);
+
+  const [generalQuestion, setGeneralQuestion] = useState<string>('');
+  const [isSendingGeneral, setIsSendingGeneral] = useState<boolean>(false);
+
+  const handleAskAboutChange = async (idx: number, customQ?: string) => {
+    if (!aiReview) return;
+    const item = aiReview.changes[idx];
+    if (!item) return;
+
+    const question = (customQ || changeQuestionInputs[idx] || '').trim();
+    if (!question) return;
+
+    const targetSnippet = `"${item.original}" -> "${item.corrected}" (Giải thích: ${item.explanation})`;
+
+    setSendingChangeIdx(idx);
+    setErrorMsg(null);
+
+    try {
+      const res = await api.discussAiReview({
+        date,
+        question,
+        targetSnippet,
+        changeIndex: idx,
+        apiKey: apiKeyInput || undefined,
+      });
+
+      onReviewSaved(res.updatedReview);
+      setChangeQuestionInputs((prev) => ({ ...prev, [idx]: '' }));
+    } catch (err: any) {
+      if (err.message?.includes('NO_API_KEY')) {
+        setShowKeyModal(true);
+      } else {
+        setErrorMsg(err.message || 'Lỗi khi gửi câu hỏi đến AI Tutor');
+      }
+    } finally {
+      setSendingChangeIdx(null);
+    }
+  };
+
+  const handleAskGeneral = async (customQ?: string) => {
+    if (!aiReview) return;
+    const question = (customQ || generalQuestion).trim();
+    if (!question) return;
+
+    setIsSendingGeneral(true);
+    setErrorMsg(null);
+
+    try {
+      const res = await api.discussAiReview({
+        date,
+        question,
+        apiKey: apiKeyInput || undefined,
+      });
+
+      onReviewSaved(res.updatedReview);
+      setGeneralQuestion('');
+    } catch (err: any) {
+      if (err.message?.includes('NO_API_KEY')) {
+        setShowKeyModal(true);
+      } else {
+        setErrorMsg(err.message || 'Lỗi khi gửi câu hỏi đến AI Tutor');
+      }
+    } finally {
+      setIsSendingGeneral(false);
+    }
+  };
 
   useEffect(() => {
     checkAiConfig();
@@ -332,32 +406,248 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
               </div>
             ) : (
               <div className="flex flex-col gap-2.5">
-                {aiReview.changes.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3.5 rounded-2xl bg-white border border-pink-100 shadow-2xs flex flex-col gap-1.5"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      {changeTypeBadge(item.type)}
-                      <div className="flex items-center gap-1.5 text-xs">
-                        <del className="text-rose-500 font-semibold px-1.5 py-0.5 rounded bg-rose-50/60">
-                          {item.original}
-                        </del>
-                        <span className="text-glow-muted font-bold">→</span>
-                        <ins className="no-underline text-emerald-700 font-bold px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200/60">
-                          {item.corrected}
-                        </ins>
-                      </div>
-                    </div>
+                {aiReview.changes.map((item, idx) => {
+                  const itemDiscussion = (aiReview.discussion || []).filter(
+                    (m) => m.changeIndex === idx || (m.targetSnippet && m.targetSnippet.includes(item.original))
+                  );
 
-                    <p className="text-xs text-glow-cocoa font-medium bg-pink-50/40 p-2 rounded-xl border border-pink-100/60 mt-0.5 leading-relaxed">
-                      💡 {item.explanation}
-                    </p>
-                  </div>
-                ))}
+                  return (
+                    <div
+                      key={idx}
+                      className="p-3.5 rounded-2xl bg-white border border-pink-100 shadow-2xs flex flex-col gap-2 transition"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        {changeTypeBadge(item.type)}
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <del className="text-rose-500 font-semibold px-1.5 py-0.5 rounded bg-rose-50/60">
+                            {item.original}
+                          </del>
+                          <span className="text-glow-muted font-bold">→</span>
+                          <ins className="no-underline text-emerald-700 font-bold px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200/60">
+                            {item.corrected}
+                          </ins>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-glow-cocoa font-medium bg-pink-50/40 p-2.5 rounded-xl border border-pink-100/60 leading-relaxed">
+                        💡 {item.explanation}
+                      </p>
+
+                      {/* Discussion toggle button */}
+                      <div className="flex items-center justify-between pt-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setOpenChangeChatIdx(openChangeChatIdx === idx ? null : idx)}
+                          className="text-[11px] font-extrabold text-purple-700 hover:text-purple-900 flex items-center gap-1.5 transition px-2.5 py-1 rounded-xl bg-purple-50/70 hover:bg-purple-100 border border-purple-200/60 active:scale-95"
+                        >
+                          <MessageSquare className="w-3 h-3 text-purple-600" />
+                          <span>{openChangeChatIdx === idx ? 'Đóng trao đổi' : 'Hỏi thêm về lỗi này'}</span>
+                          {itemDiscussion.length > 0 && (
+                            <span className="ml-0.5 px-1.5 py-0.2 rounded-full bg-purple-600 text-white text-[9px] font-black">
+                              {itemDiscussion.length}
+                            </span>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Inline Discussion Area for this specific item */}
+                      {openChangeChatIdx === idx && (
+                        <div className="mt-1 p-3.5 rounded-2xl bg-gradient-to-br from-purple-50/60 to-pink-50/40 border border-purple-100 flex flex-col gap-2.5 animate-fadeIn">
+                          {/* Quick question prompt chips */}
+                          <div className="flex flex-wrap gap-1.5">
+                            <span className="text-[10px] font-bold text-glow-muted self-center">Gợi ý nhanh:</span>
+                            {[
+                              'Giải thích sâu hơn giúp tôi',
+                              'Cho tôi 2 ví dụ tự nhiên',
+                              'Có từ đồng nghĩa nào hay hơn?',
+                              'Tại sao câu cũ chưa tự nhiên?',
+                            ].map((chip) => (
+                              <button
+                                key={chip}
+                                type="button"
+                                disabled={sendingChangeIdx === idx}
+                                onClick={() => handleAskAboutChange(idx, chip)}
+                                className="text-[10px] font-semibold text-purple-800 bg-white hover:bg-purple-100/80 border border-purple-200 px-2 py-0.5 rounded-lg transition active:scale-95 disabled:opacity-50 shadow-2xs"
+                              >
+                                {chip}
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Mini message thread */}
+                          {itemDiscussion.length > 0 && (
+                            <div className="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1 py-1">
+                              {itemDiscussion.map((msg) => (
+                                <div
+                                  key={msg.id}
+                                  className={`flex flex-col text-xs leading-relaxed ${
+                                    msg.role === 'user' ? 'items-end' : 'items-start'
+                                  }`}
+                                >
+                                  <div
+                                    className={`max-w-[88%] p-2.5 rounded-2xl ${
+                                      msg.role === 'user'
+                                        ? 'bg-rose-500 text-white rounded-br-xs shadow-2xs'
+                                        : 'bg-white border border-purple-100 text-glow-cocoa shadow-2xs rounded-bl-xs'
+                                    }`}
+                                  >
+                                    <div className="whitespace-pre-wrap font-medium">{msg.content}</div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Input row */}
+                          <form
+                            onSubmit={(e) => {
+                              e.preventDefault();
+                              handleAskAboutChange(idx);
+                            }}
+                            className="flex items-center gap-1.5 pt-0.5"
+                          >
+                            <input
+                              type="text"
+                              placeholder="Nhập câu hỏi về lỗi này... (Enter để gửi)"
+                              value={changeQuestionInputs[idx] || ''}
+                              onChange={(e) => setChangeQuestionInputs((prev) => ({ ...prev, [idx]: e.target.value }))}
+                              disabled={sendingChangeIdx === idx}
+                              className="flex-1 px-3 py-1.5 rounded-xl bg-white border border-purple-200 text-xs text-glow-cocoa focus:outline-none focus:border-purple-400 placeholder:text-stone-400 shadow-2xs"
+                            />
+                            <button
+                              type="submit"
+                              disabled={sendingChangeIdx === idx || !(changeQuestionInputs[idx] || '').trim()}
+                              className="p-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-40 transition shrink-0 shadow-2xs"
+                              title="Gửi câu hỏi"
+                            >
+                              {sendingChangeIdx === idx ? (
+                                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Send className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </form>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
+
+          {/* ========================================================= */}
+          {/* GENERAL DISCUSSION WITH AI TUTOR FOR THE WHOLE ENTRY */}
+          {/* ========================================================= */}
+          {(() => {
+            const generalMessages = (aiReview.discussion || []).filter(
+              (m) => m.changeIndex === undefined || m.changeIndex === null
+            );
+
+            return (
+              <div className="mt-2 bg-gradient-to-br from-purple-50/70 via-pink-50/50 to-amber-50/60 rounded-3xl p-4 sm:p-5 border border-purple-100/90 shadow-soft flex flex-col gap-3">
+                <div className="flex items-center justify-between border-b border-purple-100/80 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-white shadow-2xs flex items-center justify-center text-purple-600 border border-purple-100 shrink-0">
+                      <GraduationCap className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-black text-glow-cocoa text-sm flex items-center gap-1.5">
+                        <span>Góc Trao Đổi Với AI Tutor</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                          Interactive Q&A
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-glow-muted font-medium">
+                        Hỏi đáp thêm về bài viết, cách dùng từ hoặc nhờ AI gợi ý mở rộng ý
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Starter Chips */}
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {[
+                    'Đoạn nào trong bài tôi viết tự nhiên nhất? ✨',
+                    'Gợi ý cách mở rộng ý cho bài này 💡',
+                    'Từ vựng nào trong bài tôi có thể nâng cấp? 📚',
+                    'Viết lại bài này theo văn phong tự nhiên hơn 🌸',
+                  ].map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      disabled={isSendingGeneral}
+                      onClick={() => handleAskGeneral(chip)}
+                      className="text-xs font-semibold text-purple-800 bg-white/90 hover:bg-white border border-purple-200/80 px-2.5 py-1 rounded-xl transition shadow-2xs active:scale-95 disabled:opacity-50"
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Messages Thread */}
+                {generalMessages.length > 0 && (
+                  <div className="flex flex-col gap-2.5 max-h-80 overflow-y-auto pr-1 py-1">
+                    {generalMessages.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`flex gap-2 text-xs leading-relaxed ${
+                          msg.role === 'user' ? 'justify-end' : 'justify-start'
+                        }`}
+                      >
+                        {msg.role === 'assistant' && (
+                          <div className="w-7 h-7 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 shrink-0 mt-0.5 border border-purple-200/60">
+                            <GraduationCap className="w-3.5 h-3.5" />
+                          </div>
+                        )}
+                        <div
+                          className={`max-w-[85%] p-3 rounded-2xl ${
+                            msg.role === 'user'
+                              ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-br-xs shadow-soft'
+                              : 'bg-white border border-purple-100 text-glow-cocoa shadow-2xs rounded-bl-xs'
+                          }`}
+                        >
+                          <div className="whitespace-pre-wrap font-medium">{msg.content}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* General Input Form */}
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleAskGeneral();
+                  }}
+                  className="flex items-center gap-2 pt-1"
+                >
+                  <input
+                    type="text"
+                    placeholder="Hỏi AI Tutor về bài viết này... (Ví dụ: Tại sao câu này lại dùng thì quá khứ?)"
+                    value={generalQuestion}
+                    onChange={(e) => setGeneralQuestion(e.target.value)}
+                    disabled={isSendingGeneral}
+                    className="flex-1 px-4 py-2.5 rounded-2xl bg-white border border-purple-200 text-xs font-medium text-glow-cocoa focus:outline-none focus:border-purple-400 placeholder:text-stone-400 shadow-2xs"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSendingGeneral || !generalQuestion.trim()}
+                    className="px-4 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-soft transition bouncy-button disabled:opacity-40 shrink-0"
+                  >
+                    {isSendingGeneral ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <span>Gửi</span>
+                        <Send className="w-3.5 h-3.5" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              </div>
+            );
+          })()}
         </div>
       )}
 

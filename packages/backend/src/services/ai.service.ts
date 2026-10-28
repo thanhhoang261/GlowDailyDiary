@@ -1,6 +1,6 @@
 import { prisma } from '../prisma.js';
-import { AiReviewResult, CoachReport } from '@diary/shared';
-import { decryptForUser } from './crypto.service.js';
+import { AiReviewResult, CoachReport, ReviewDiscussionMessage } from '@diary/shared';
+import { decryptForUser, encryptForUser } from './crypto.service.js';
 
 const SYSTEM_PROMPT = `You are a warm, encouraging, expert English teacher and language coach for a personal English diary application called "Daily Glow Diary".
 Your job is to help the user improve their written English by reviewing their diary entry.
@@ -492,4 +492,173 @@ export async function getOrGenerateCoachReport(userId: string, directKey?: strin
     }
     throw err;
   }
+}
+
+export async function discussAiReview(params: {
+  userId: string;
+  date: string;
+  question: string;
+  targetSnippet?: string;
+  changeIndex?: number;
+  apiKey?: string;
+}): Promise<{ reply: string; updatedReview: AiReviewResult }> {
+  const { userId, date, question, targetSnippet, changeIndex, apiKey: directKey } = params;
+
+  if (!question || !question.trim()) {
+    throw new Error('Vui lòng nhập câu hỏi hoặc thắc mắc của bạn.');
+  }
+
+  // 1. Fetch entry for this user and date
+  const entry = await prisma.diaryEntry.findUnique({
+    where: {
+      userId_date: {
+        userId,
+        date,
+      },
+    },
+  });
+
+  if (!entry) {
+    throw new Error('Không tìm thấy bài viết nhật ký này.');
+  }
+
+  const plainTitle = entry.title || '';
+  const plainContent = decryptForUser(userId, entry.content);
+
+  let review: AiReviewResult;
+  if (entry.aiReview) {
+    try {
+      const dec = decryptForUser(userId, entry.aiReview);
+      review = JSON.parse(dec);
+    } catch {
+      throw new Error('Bản nhận xét AI của bài viết này bị lỗi định dạng.');
+    }
+  } else {
+    throw new Error('Bài viết này chưa có nhận xét AI để trao đổi. Hãy bấm Soát lỗi AI trước nhé!');
+  }
+
+  const apiKey = await resolveApiKey(userId, directKey);
+
+  // 2. Build discussion context
+  const existingDiscussion = Array.isArray(review.discussion) ? review.discussion : [];
+
+  // Provide last 6 messages in the conversation for continuity
+  const conversationHistory = existingDiscussion.slice(-6).map((m) => ({
+    role: m.role as 'user' | 'assistant',
+    content: m.content,
+  }));
+
+  const changesContext = (review.changes || [])
+    .map((c, i) => `#${i + 1}: "${c.original}" -> "${c.corrected}" (Giải thích: ${c.explanation})`)
+    .join('\n');
+
+  let targetContext = '';
+  if (targetSnippet) {
+    targetContext = `\nThe user is specifically asking about this particular change/feedback:\n>>> "${targetSnippet}"\n`;
+  }
+
+  const systemPrompt = `You are a warm, gentle, expert English Tutor and language coach for a personal English diary app called "Daily Glow Diary".
+The user is a Vietnamese learner who wrote a diary entry and received AI corrections.
+Now they have a follow-up question or want to discuss a specific feedback/correction further.
+
+User's Diary Title: "${plainTitle}"
+User's Original Entry:
+"""
+${plainContent.slice(0, 1500)}
+"""
+
+AI Revised Entry:
+"""
+${review.correctedContent?.slice(0, 1500) || ''}
+"""
+
+List of AI Corrections Made:
+${changesContext}
+${targetContext}
+
+Instructions:
+1. Answer the user's question with clarity, warmth, and depth.
+2. Explain the reasoning clearly in natural, modern Vietnamese, with clear English examples.
+3. If the user asks for examples, provide 2-3 realistic, relatable daily journal example sentences with Vietnamese translations.
+4. If the user asks whether their original phrase was okay, explain the nuance (is it strictly grammatically wrong, or just unnatural / informal / awkward?).
+5. Keep the tone friendly, encouraging, and supportive (like a friendly companion teacher).
+6. Format nicely with markdown (bold, bullet points, quotes) for easy reading on mobile/desktop.`;
+
+  const messages: any[] = [
+    { role: 'system', content: systemPrompt },
+    ...conversationHistory,
+    { role: 'user', content: question.trim() },
+  ];
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages,
+      temperature: 0.5,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    let errorMsg = `OpenAI API error (${response.status})`;
+    try {
+      const errJson = JSON.parse(errorBody);
+      if (errJson.error?.message) {
+        errorMsg = errJson.error.message;
+      }
+    } catch {}
+
+    if (response.status === 401) {
+      throw new Error('Invalid OpenAI API key. Please check your key at platform.openai.com');
+    }
+    if (response.status === 429) {
+      throw new Error('OpenAI rate limit or insufficient quota reached. Please check your OpenAI account billing.');
+    }
+    throw new Error(errorMsg);
+  }
+
+  const data = await response.json();
+  const reply = data.choices?.[0]?.message?.content?.trim();
+  if (!reply) {
+    throw new Error('OpenAI returned an empty response. Please try again.');
+  }
+
+  // 3. Append messages to discussion
+  const now = new Date().toISOString();
+  const userMsg: ReviewDiscussionMessage = {
+    id: `msg-${Date.now()}-u`,
+    role: 'user',
+    content: question.trim(),
+    targetSnippet,
+    changeIndex,
+    createdAt: now,
+  };
+  const assistantMsg: ReviewDiscussionMessage = {
+    id: `msg-${Date.now() + 1}-a`,
+    role: 'assistant',
+    content: reply,
+    targetSnippet,
+    changeIndex,
+    createdAt: new Date().toISOString(),
+  };
+
+  const updatedDiscussion = [...existingDiscussion, userMsg, assistantMsg];
+  const updatedReview: AiReviewResult = {
+    ...review,
+    discussion: updatedDiscussion,
+  };
+
+  // 4. Save encrypted review back to DB
+  const encryptedReview = encryptForUser(userId, JSON.stringify(updatedReview));
+  await prisma.diaryEntry.update({
+    where: { id: entry.id },
+    data: { aiReview: encryptedReview },
+  });
+
+  return { reply, updatedReview };
 }

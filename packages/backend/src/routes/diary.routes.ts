@@ -12,6 +12,7 @@ import {
   setAiKeyController,
   getCoachReportController,
   refreshCoachReportController,
+  discussAiReviewController,
 } from '../controllers/diary.controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -30,6 +31,7 @@ router.get('/search', searchEntries);
 
 // AI Review & Key Management
 router.post('/ai/review', reviewEntryWithAi);
+router.post('/ai/discuss', discussAiReviewController);
 router.get('/ai/config', getAiConfigController);
 router.post('/ai/key', setAiKeyController);
 

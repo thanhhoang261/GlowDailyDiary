@@ -104,6 +104,15 @@ export interface AiChangeItem {
   explanation: string;
 }
 
+export interface ReviewDiscussionMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  targetSnippet?: string;
+  changeIndex?: number;
+  createdAt: string;
+}
+
 export interface AiReviewResult {
   correctedTitle: string;
   correctedContent: string;
@@ -111,12 +120,21 @@ export interface AiReviewResult {
   encouragement?: string;
   overallFeedback?: string;
   analyzedAt: string;
+  discussion?: ReviewDiscussionMessage[];
 }
 
 export interface AiReviewRequestDto {
   date?: string;
   title?: string;
   content: string;
+  apiKey?: string;
+}
+
+export interface DiscussAiReviewDto {
+  date: string;
+  question: string;
+  targetSnippet?: string;
+  changeIndex?: number;
   apiKey?: string;
 }
 

@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth.js';
 import { prisma } from '../prisma.js';
 import { DiaryEntry, DaySummary, StreakStats, MoodType, VocabItem, AiReviewResult } from '@diary/shared';
-import { reviewDiaryWithAi, saveUserApiKey, getUserAiConfig, getOrGenerateCoachReport } from '../services/ai.service.js';
+import { reviewDiaryWithAi, saveUserApiKey, getUserAiConfig, getOrGenerateCoachReport, discussAiReview } from '../services/ai.service.js';
 import { encryptForUser, decryptForUser } from '../services/crypto.service.js';
 import path from 'path';
 import fs from 'fs';
@@ -534,5 +534,42 @@ export async function refreshCoachReportController(req: AuthenticatedRequest, re
       return;
     }
     res.status(500).json({ message: error.message || 'Error refreshing Coach report' });
+  }
+}
+
+export async function discussAiReviewController(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const { date, question, targetSnippet, changeIndex, apiKey } = req.body;
+
+    if (!date) {
+      res.status(400).json({ message: 'Ngày bài viết (date) là bắt buộc.' });
+      return;
+    }
+
+    if (!question || !question.trim()) {
+      res.status(400).json({ message: 'Nội dung câu hỏi không được để trống.' });
+      return;
+    }
+
+    const { reply, updatedReview } = await discussAiReview({
+      userId: req.userId!,
+      date,
+      question,
+      targetSnippet,
+      changeIndex,
+      apiKey,
+    });
+
+    res.json({ reply, updatedReview });
+  } catch (error: any) {
+    console.error('discussAiReview error:', error);
+    if (error.message === 'NO_API_KEY') {
+      res.status(400).json({
+        code: 'NO_API_KEY',
+        message: 'Vui lòng cung cấp OpenAI API key để trò chuyện với AI Tutor.',
+      });
+      return;
+    }
+    res.status(500).json({ message: error.message || 'Lỗi khi trao đổi với AI Tutor.' });
   }
 }

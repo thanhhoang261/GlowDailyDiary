@@ -8,6 +8,7 @@ import {
   DaySummary,
   StreakStats,
   AiReviewResult,
+  DiscussAiReviewDto,
   CoachReport,
   AdminSystemOverview,
   AdminUserItem,
@@ -195,6 +196,12 @@ export const api = {
   // AI Grammar & Spelling Review
   reviewWithAi: (data: { date?: string; title?: string; content: string; apiKey?: string; saveKey?: boolean }) =>
     request<{ result: AiReviewResult }>('/api/diary/ai/review', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  discussAiReview: (data: DiscussAiReviewDto) =>
+    request<{ reply: string; updatedReview: AiReviewResult }>('/api/diary/ai/discuss', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
