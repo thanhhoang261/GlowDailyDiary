@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { AiReviewResult } from '@diary/shared';
 import { api } from '../services/api';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
 interface AiReviewSectionProps {
   date: string;
@@ -437,9 +438,12 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
                         </div>
                       </div>
 
-                      <p className="text-xs text-glow-cocoa font-medium bg-pink-50/40 p-2.5 rounded-xl border border-pink-100/60 leading-relaxed">
-                        💡 {item.explanation}
-                      </p>
+                      <div className="text-xs text-glow-cocoa font-medium bg-pink-50/40 p-2.5 rounded-xl border border-pink-100/60 leading-relaxed flex items-start gap-2">
+                        <span className="shrink-0 mt-0.5">💡</span>
+                        <div className="flex-1">
+                          <MarkdownRenderer content={item.explanation} />
+                        </div>
+                      </div>
 
                       {/* Discussion toggle button */}
                       <div className="flex items-center justify-between pt-0.5">
@@ -484,7 +488,7 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
 
                           {/* Mini message thread */}
                           {itemDiscussion.length > 0 && (
-                            <div className="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1 py-1">
+                            <div className="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1 py-1">
                               {itemDiscussion.map((msg) => (
                                 <div
                                   key={msg.id}
@@ -499,7 +503,11 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
                                         : 'bg-white border border-purple-100 text-glow-cocoa shadow-2xs rounded-bl-xs'
                                     }`}
                                   >
-                                    <div className="whitespace-pre-wrap font-medium">{msg.content}</div>
+                                    {msg.role === 'assistant' ? (
+                                      <MarkdownRenderer content={msg.content} />
+                                    ) : (
+                                      <div className="whitespace-pre-wrap font-medium">{msg.content}</div>
+                                    )}
                                   </div>
                                 </div>
                               ))}
@@ -597,7 +605,7 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
 
                 {/* Messages Thread */}
                 {generalMessages.length > 0 && (
-                  <div className="flex flex-col gap-2.5 max-h-80 overflow-y-auto pr-1 py-1">
+                  <div className="flex flex-col gap-2.5 max-h-96 sm:max-h-[30rem] overflow-y-auto pr-1 py-1">
                     {generalMessages.map((msg) => (
                       <div
                         key={msg.id}
@@ -611,13 +619,17 @@ export const AiReviewSection: React.FC<AiReviewSectionProps> = ({
                           </div>
                         )}
                         <div
-                          className={`max-w-[85%] p-3 rounded-2xl ${
+                          className={`max-w-[90%] sm:max-w-[85%] p-3.5 rounded-2xl ${
                             msg.role === 'user'
                               ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-br-xs shadow-soft'
                               : 'bg-white border border-purple-100 text-glow-cocoa shadow-2xs rounded-bl-xs'
                           }`}
                         >
-                          <div className="whitespace-pre-wrap font-medium">{msg.content}</div>
+                          {msg.role === 'assistant' ? (
+                            <MarkdownRenderer content={msg.content} />
+                          ) : (
+                            <div className="whitespace-pre-wrap font-medium">{msg.content}</div>
+                          )}
                         </div>
                       </div>
                     ))}
