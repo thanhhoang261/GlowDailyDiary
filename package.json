@@ -2,6 +2,7 @@
   "name": "daily-glow-diary",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@11.28.7",
   "description": "Personal English diary with voice recording, streak tracking & cute pastel aesthetic",
   "scripts": {
     "predev": "pnpm --filter @diary/shared build",

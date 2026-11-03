@@ -6,7 +6,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 RUN apk add --no-cache openssl ca-certificates
-RUN corepack enable && corepack prepare pnpm@11.13.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.28.7 --activate
 
 # Copy monorepo configuration
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
@@ -36,7 +36,7 @@ FROM node:22-alpine AS runner
 WORKDIR /app
 
 RUN apk add --no-cache openssl ca-certificates tzdata
-RUN corepack enable && corepack prepare pnpm@11.13.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.28.7 --activate
 
 ENV NODE_ENV=production
 ENV PORT=5173

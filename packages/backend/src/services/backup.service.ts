@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { ZipArchive } from 'archiver';
 import cron from 'node-cron';
+// @ts-ignore
 import { google } from 'googleapis';
 import { prisma } from '../prisma.js';
 import { decryptForUser } from './crypto.service.js';
